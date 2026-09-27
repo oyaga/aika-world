@@ -99,7 +99,7 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 | `poi_templo`, `poi_torre`           | Empty | Posição do marco. Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
 | `area_servicos`                     | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).         |
 | `area_vila`                         | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).   |
-| `historia_1`, `historia_2`, …       | Empty | Posição das placas da Trilha da história, na ordem dos marcos.                                     |
+| `historia_1`, `historia_2`, …       | Empty | Posição dos NPCs da Trilha da história, na ordem dos marcos (a placa fica 1,3 m atrás).            |
 
 - O **spawn** da Aika é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
 - Para a propriedade `raio`: selecione o Empty → Object Properties → Custom Properties → Add, e
