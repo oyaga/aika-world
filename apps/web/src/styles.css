@@ -701,3 +701,23 @@ button {
     animation: none;
   }
 }
+
+/* Botão de pulo (só em telas de toque) */
+.jump-button {
+  display: none;
+  min-width: 96px;
+  height: 56px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  background: rgba(255, 90, 2, 0.25);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  touch-action: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .jump-button {
+    display: block;
+  }
+}

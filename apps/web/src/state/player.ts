@@ -1,4 +1,5 @@
 import { Quaternion, Vector3 } from 'three'
+import type { MoveState } from '../world/locomotion'
 
 /**
  * Estado mutável do visitante, compartilhado entre Player, CameraRig, NPCs e proximidade.
@@ -7,10 +8,15 @@ import { Quaternion, Vector3 } from 'three'
 export const playerState = {
   orientation: new Quaternion(),
   position: new Vector3(0, 20, 0),
-  /** Distância do centro até os pés (altura do terreno, suavizada). 0 = ainda não calculada. */
+  /** Distância do centro até os pés (chão, água ou no ar). 0 = ainda não calculada. */
   radius: 0,
-  /** 0..1 — quão rápido está andando (para a animação). */
+  /** Velocidade radial (pulo/queda). */
+  vy: 0,
+  state: 'ground' as MoveState,
+  /** Velocidade para a animação: 1 = andando, ~1,75 = correndo. */
   speed: 0,
+  /** Momento (performance.now) do último pulo, para a Aika pular junto. */
+  jumpedAt: 0,
 }
 
 /**
@@ -23,7 +29,11 @@ export const aikaState = {
   orientation: new Quaternion(),
   position: new Vector3(0, 20, 0),
   radius: 0,
+  vy: 0,
+  state: 'ground' as MoveState,
   speed: 0,
+  /** Último pulo do visitante que a Aika já imitou. */
+  copiedJump: 0,
   /** false até o primeiro frame, quando ela aparece ao lado do visitante. */
   placed: false,
 }

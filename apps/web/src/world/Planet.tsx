@@ -1,9 +1,11 @@
-import { Suspense, useLayoutEffect, useMemo } from 'react'
+import { Suspense, useLayoutEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import {
   BufferAttribute,
   Color,
   IcosahedronGeometry,
   type Mesh,
+  type MeshToonMaterial,
   type Object3D,
   Quaternion,
   Vector3,
@@ -12,7 +14,8 @@ import { modelUrl } from '../lib/models'
 import { mulberry32, PLANET_RADIUS } from '../lib/sphere'
 import { type Markers, useStore } from '../state/store'
 import type { LandmarkKind } from './layout'
-import { Toon } from './materials'
+import { type Lake, LAKES, proceduralGround, WATER_DROP } from './lakes'
+import { Toon, toonGradient } from './materials'
 import { ModelBoundary, useModelClone } from './Model'
 import { setTerrain } from './terrain'
 
@@ -23,6 +26,7 @@ const DEFAULT_VILA_RADIUS = 12 // metros
  * Planeta: `planeta.glb` quando existir, senão a esfera procedural.
  * Convenções de nomes no Blender (ver docs/arte.md):
  * - `bloqueio_*`  → mesh invisível onde não se anda;
+ * - `agua_*`      → superfície da água (lagos): dá para entrar, pular e nadar;
  * - `poi_templo`, `poi_correio` → Empty com a posição do marco (sem `poi_correio`,
  *   a caixa de correio fica ao lado do templo)
  *   (a frente do Empty, −Y no Blender, é para onde o prédio olha);
@@ -45,10 +49,16 @@ export function Planet() {
 const tmpPos = new Vector3()
 const tmpQuat = new Quaternion()
 
-function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blockers: Mesh[] } {
+function readMarkers(root: Object3D): {
+  markers: Markers
+  ground: Mesh[]
+  blockers: Mesh[]
+  water: Mesh[]
+} {
   const markers: Markers = { landmarks: {}, vila: null, servicos: null, story: [] }
   const ground: Mesh[] = []
   const blockers: Mesh[] = []
+  const water: Mesh[] = []
   root.updateMatrixWorld(true)
   root.traverse((obj) => {
     const name = obj.name.toLowerCase()
@@ -56,6 +66,10 @@ function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blocke
     if (name.startsWith('bloqueio_')) {
       if (mesh.isMesh) blockers.push(mesh)
       obj.visible = false
+      return
+    }
+    if (name.startsWith('agua_')) {
+      if (mesh.isMesh) water.push(mesh)
       return
     }
     if (mesh.isMesh) {
@@ -83,7 +97,7 @@ function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blocke
       markers.vila = { dir, radius: raio > 0 ? raio : DEFAULT_VILA_RADIUS }
     }
   })
-  return { markers, ground, blockers }
+  return { markers, ground, blockers, water }
 }
 
 function PlanetModel({ url }: { url: string }) {
@@ -91,8 +105,8 @@ function PlanetModel({ url }: { url: string }) {
   const setMarkers = useStore((s) => s.setMarkers)
 
   useLayoutEffect(() => {
-    const { markers, ground, blockers } = readMarkers(root)
-    setTerrain(ground, blockers)
+    const { markers, ground, blockers, water } = readMarkers(root)
+    setTerrain(ground, blockers, water)
     setMarkers(markers)
     return () => setTerrain([], [])
   }, [root, setMarkers])
@@ -100,32 +114,83 @@ function PlanetModel({ url }: { url: string }) {
   return <primitive object={root} />
 }
 
-/** Planeta low-poly com leve variação de cor por face (determinística). */
+/** Planeta low-poly com leve variação de cor por face (determinística) e os lagos. */
 function ProceduralPlanet() {
   const geometry = useMemo(() => {
-    const geo = new IcosahedronGeometry(PLANET_RADIUS, 14)
+    const geo = new IcosahedronGeometry(PLANET_RADIUS, 20)
+    // Afunda as bacias dos lagos.
+    const pos = geo.attributes.position!
+    const v = new Vector3()
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).normalize()
+      v.multiplyScalar(proceduralGround(v))
+      pos.setXYZ(i, v.x, v.y, v.z)
+    }
     // Geometria não indexada: recalcular normais gera normais por face (flat).
     geo.computeVertexNormals()
     const rand = mulberry32(7)
     const base = new Color('#8fd18a')
     const alt = new Color('#6fbf7a')
     const sand = new Color('#e9d8a6')
-    const count = geo.attributes.position!.count
-    const colors = new Float32Array(count * 3)
+    const lakeBed = new Color('#c9b98a')
+    const colors = new Float32Array(pos.count * 3)
     const c = new Color()
-    for (let i = 0; i < count; i += 3) {
+    const centroid = new Vector3()
+    for (let i = 0; i < pos.count; i += 3) {
       const r = rand()
+      centroid
+        .fromBufferAttribute(pos, i)
+        .add(v.fromBufferAttribute(pos, i + 1))
+        .add(v.fromBufferAttribute(pos, i + 2))
+      const height = centroid.length() / 3
       c.copy(base).lerp(alt, r)
-      if (r > 0.97) c.copy(sand)
-      for (let v = 0; v < 3; v++) c.toArray(colors, (i + v) * 3)
+      if (r > 0.97 || height < PLANET_RADIUS - 0.08) c.copy(sand)
+      if (height < PLANET_RADIUS - WATER_DROP - 0.2) c.copy(lakeBed)
+      for (let k = 0; k < 3; k++) c.toArray(colors, (i + k) * 3)
     }
     geo.setAttribute('color', new BufferAttribute(colors, 3))
     return geo
   }, [])
 
   return (
-    <mesh geometry={geometry} receiveShadow name="planet">
-      <Toon color="#ffffff" vertexColors />
+    <>
+      <mesh geometry={geometry} receiveShadow name="planet">
+        <Toon color="#ffffff" vertexColors />
+      </mesh>
+      {LAKES.map((lake, i) => (
+        <LakeWater key={i} lake={lake} />
+      ))}
+    </>
+  )
+}
+
+/** Superfície da água: uma calota esférica sobre a bacia, com um brilho que ondula. */
+function LakeWater({ lake }: { lake: Lake }) {
+  const material = useRef<MeshToonMaterial>(null)
+  const reducedMotion = useStore((s) => s.reducedMotion)
+  const quaternion = useMemo(
+    () => new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), lake.center),
+    [lake],
+  )
+  useFrame(({ clock }) => {
+    if (!material.current || reducedMotion) return
+    material.current.emissiveIntensity = 0.25 + Math.sin(clock.elapsedTime * 1.5) * 0.08
+  })
+  return (
+    <mesh quaternion={quaternion}>
+      <sphereGeometry
+        args={[PLANET_RADIUS - WATER_DROP, 48, 6, 0, Math.PI * 2, 0, lake.radius / PLANET_RADIUS]}
+      />
+      <meshToonMaterial
+        ref={material}
+        color="#3fa9d8"
+        emissive="#5ce1e6"
+        emissiveIntensity={0.25}
+        gradientMap={toonGradient}
+        transparent
+        opacity={0.78}
+        depthWrite={false}
+      />
     </mesh>
   )
 }

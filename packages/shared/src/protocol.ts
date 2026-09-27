@@ -1,10 +1,10 @@
 /**
  * Protocolo WebSocket do multiplayer (cliente ⇄ Durable Object `World`).
  *
- * A posição de um visitante na esfera é derivada só da orientação
- * (quaternion): "up" local × raio do terreno, calculado em cada cliente.
- * Por isso a rede só carrega o quaternion `q` e a velocidade `s` (0..1,
- * usada na animação de andar).
+ * A posição de um visitante na esfera é a orientação (quaternion `q`, cujo
+ * "up" local aponta para ele) vezes a distância ao centro `r` (chão, água ou
+ * no ar durante um pulo). Além disso vão `s`, a velocidade para a animação
+ * (1 = andando, ~1,75 = correndo), e `a`, o estado de movimento.
  */
 
 /** Versão do protocolo; o servidor recusa clientes de outra versão. */
@@ -54,21 +54,31 @@ export interface PlayerInfo {
   color: string
 }
 
-export interface PlayerSnapshot extends PlayerInfo {
+/** Estado de movimento: 0 = no chão, 1 = no ar (pulo), 2 = nadando. */
+export type MoveAction = 0 | 1 | 2
+
+export interface MoveData {
   q: QuatTuple
   s: number
+  r: number
+  a: MoveAction
 }
 
+export interface PlayerSnapshot extends PlayerInfo, MoveData {}
+
+/** Limites aceitos para `r` (o planeta tem raio ~20 m). */
+export const MIN_RADIUS = 14
+export const MAX_RADIUS = 30
+
 /** Mensagens enviadas do cliente para o servidor. */
-export type ClientMessage =
-  { type: 'move'; q: QuatTuple; s: number } | { type: 'emote'; emote: Emote }
+export type ClientMessage = ({ type: 'move' } & MoveData) | { type: 'emote'; emote: Emote }
 
 /** Mensagens enviadas do servidor para o cliente. */
 export type ServerMessage =
   | { type: 'welcome'; you: PlayerInfo; players: PlayerSnapshot[] }
   | { type: 'join'; player: PlayerSnapshot }
   | { type: 'leave'; id: string }
-  | { type: 'move'; id: string; q: QuatTuple; s: number }
+  | ({ type: 'move'; id: string } & MoveData)
   | { type: 'emote'; id: string; emote: Emote }
   | { type: 'commit'; repo: string | null; secret: boolean; at: string }
 
@@ -101,8 +111,16 @@ export function parseClientMessage(raw: string): ClientMessage | null {
   switch (msg.type) {
     case 'move': {
       const q = sanitizeQuat(msg.q)
-      if (!q || !isFiniteNumber(msg.s)) return null
-      return { type: 'move', q, s: Math.min(1, Math.max(0, Math.round(msg.s * 100) / 100)) }
+      if (!q || !isFiniteNumber(msg.s) || !isFiniteNumber(msg.r)) return null
+      if (msg.a !== 0 && msg.a !== 1 && msg.a !== 2) return null
+      const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+      return {
+        type: 'move',
+        q,
+        s: clamp(Math.round(msg.s * 100) / 100, 0, 2),
+        r: clamp(Math.round(msg.r * 100) / 100, MIN_RADIUS, MAX_RADIUS),
+        a: msg.a,
+      }
     }
     case 'emote':
       return EMOTES.includes(msg.emote as Emote)

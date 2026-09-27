@@ -20,6 +20,7 @@ import { Player } from './Player'
 import { Props } from './Props'
 import { RemotePlayers } from './RemotePlayers'
 import { ServiceDistrict } from './ServiceDistrict'
+import { Splashes } from './Splashes'
 import { Trail } from './Trail'
 
 interface SceneProps {
@@ -65,6 +66,7 @@ export function Scene({ landmarks, story, services, houses, pois, onReady }: Sce
       <Player pois={pois} />
       <Companion pois={pois} />
       <RemotePlayers />
+      <Splashes />
       <CameraRig />
     </>
   )

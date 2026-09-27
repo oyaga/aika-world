@@ -41,22 +41,29 @@ check(
   a.inbox.some((m) => m.type === 'join' && m.player.id === welB.you.id),
 )
 
-a.send(JSON.stringify({ type: 'move', q: [0.1, 0, 0, 0.995], s: 0.8 }))
+a.send(JSON.stringify({ type: 'move', q: [0.1, 0, 0, 0.995], s: 0.8, r: 21.5, a: 1 }))
 await wait(200)
 const mv = b.inbox.find((m) => m.type === 'move')
 check(
   'B recebe move de A (normalizado)',
-  mv?.id === welA.you.id && Math.abs(Math.hypot(...mv.q) - 1) < 1e-3 && mv.s === 0.8,
+  mv?.id === welA.you.id &&
+    Math.abs(Math.hypot(...mv.q) - 1) < 1e-3 &&
+    mv.s === 0.8 &&
+    mv.r === 21.5 &&
+    mv.a === 1,
 )
 check('A não recebe o próprio move', !a.inbox.some((m) => m.type === 'move'))
 
-a.send(JSON.stringify({ type: 'move', q: [NaN, 0, 0, 1], s: 1 }))
+a.send(JSON.stringify({ type: 'move', q: [NaN, 0, 0, 1], s: 1, r: 20, a: 0 }))
 a.send(JSON.stringify({ type: 'emote', emote: '💣' }))
 a.send('lixo{')
-a.send(JSON.stringify({ type: 'move', q: [0, 0, 0, 1], s: 99 }))
+a.send(JSON.stringify({ type: 'move', q: [0, 0, 0, 1], s: 99, r: 999, a: 0 }))
 await wait(200)
 const moves = b.inbox.filter((m) => m.type === 'move')
-check('inválidos ignorados; s limitado a 1', moves.length === 2 && moves[1].s === 1)
+check(
+  'inválidos ignorados; s e r limitados',
+  moves.length === 2 && moves[1].s === 2 && moves[1].r === 30,
+)
 check('emote fora da lista ignorado', !b.inbox.some((m) => m.type === 'emote'))
 
 for (let i = 0; i < 5; i++) a.send(JSON.stringify({ type: 'emote', emote: '👋' }))
@@ -64,7 +71,8 @@ await wait(200)
 check('emotes limitados (máx. 2 de rajada)', b.inbox.filter((m) => m.type === 'emote').length === 2)
 
 const before = b.inbox.filter((m) => m.type === 'move').length
-for (let i = 0; i < 60; i++) a.send(JSON.stringify({ type: 'move', q: [0, 0, 0, 1], s: 0 }))
+for (let i = 0; i < 60; i++)
+  a.send(JSON.stringify({ type: 'move', q: [0, 0, 0, 1], s: 0, r: 20, a: 0 }))
 await wait(300)
 const burst = b.inbox.filter((m) => m.type === 'move').length - before
 check(`moves limitados (${burst} de 60 passaram)`, burst > 0 && burst <= 16)

@@ -2,6 +2,7 @@ import { Vector3 } from 'three'
 import type { RepoHouse, WorldData } from '@aika-world/shared'
 import type { Service, StoryMilestone } from '../content'
 import type { Markers } from '../state/store'
+import { lakeNear, SHORE } from './lakes'
 import {
   angleBetween,
   dirFromAngles,
@@ -221,8 +222,12 @@ export function layoutStory(story: StoryMilestone[], markers: Markers | null): S
   })
 }
 
+/** Longe da trilha e dos lagos (casas não ficam no caminho nem dentro d'água). */
 function awayFromTrail(p: Vector3): boolean {
-  return Math.abs(Math.acos(Math.max(-1, Math.min(1, p.y))) - TRAIL_POLAR) > 0.18
+  return (
+    Math.abs(Math.acos(Math.max(-1, Math.min(1, p.y))) - TRAIL_POLAR) > 0.18 &&
+    !lakeNear(p, SHORE + 2.5)
+  )
 }
 
 const HOUSE_SPACING = 4.5 // metros entre casas dentro da vila

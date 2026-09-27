@@ -8,6 +8,9 @@ import type { RepoHouse } from '@aika-world/shared'
 export const AIKA_GREETING =
   'Oi! Eu sou a Aika. Vem comigo, vou te mostrar o mundo do Felipe! O templo fica logo ali na frente.'
 
+export const AIKA_LAKE = 'Olha o lago! Pode pular, a água tá ótima 💦 (Espaço pula, Shift corre)'
+export const AIKA_SWIM = 'Que delícia! Para sair da água, é só nadar até a margem ou pular.'
+
 export const AIKA_CHATTER: string[] = [
   'Sabia que cada casinha cresce quando o Felipe faz commit nela?',
   'Psiu! O Felipe está lá no templo, esperando para te dar boas-vindas.',
@@ -18,6 +21,7 @@ export const AIKA_CHATTER: string[] = [
   'Siga a trilha de pedras: o Felipe de cada época conta um pedaço da história dele.',
   'As casinhas cinzas com cadeado são projetos secretos. Nem eu tenho a chave!',
   'Hmm… será que o Felipe já fez commit hoje?',
+  'Já tentou pular dentro do lago? Faz um splash!',
   'Adoro esse céu estrelado. Dizem que cada estrela é um bug corrigido.',
   'Se ficar tonto de tanto girar, tem a versão simples lá no canto de cima.',
   'Cada repositório aqui é um estudo, um teste ou um projeto de verdade. Tudo conta!',

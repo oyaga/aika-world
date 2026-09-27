@@ -5,6 +5,7 @@ import {
   type ClientMessage,
   type Emote,
   MAX_ROOMS,
+  type MoveAction,
   MOVE_RATE_HZ,
   PING,
   type PlayerInfo,
@@ -36,8 +37,10 @@ export interface RemotePlayer {
   target: Quaternion
   current: Quaternion
   s: number
-  /** false até a primeira posição chegar; então `current` pula direto para o alvo. */
-  placed: boolean
+  /** Distância ao centro recebida (alvo) e a mostrada (suavizada). */
+  targetR: number
+  r: number
+  a: MoveAction
 }
 
 /** Outros visitantes, fora do React (lidos a cada frame). A lista de ids fica no store. */
@@ -50,19 +53,24 @@ let pingTimer = 0
 let lastSent = 0
 const lastQ = new Quaternion(0, 0, 0, 2) // inválido de propósito: força o primeiro envio
 let lastS = -1
+let lastR = 0
+let lastA: MoveAction = 0
+const ACTIONS = { ground: 0, air: 1, swim: 2 } as const
 
 function syncIds() {
   useStore.getState().setRemoteIds([...remotes.keys()])
 }
 
-function addRemote(p: PlayerInfo & { q: QuatTuple; s: number }) {
+function addRemote(p: PlayerInfo & { q: QuatTuple; s: number; r: number; a: MoveAction }) {
   const q = new Quaternion(...p.q)
   remotes.set(p.id, {
     info: { id: p.id, name: p.name, color: p.color },
     target: q,
     current: q.clone(),
     s: p.s,
-    placed: true,
+    targetR: p.r,
+    r: p.r,
+    a: p.a,
   })
 }
 
@@ -91,6 +99,8 @@ function handle(msg: ServerMessage) {
       if (r) {
         r.target.set(...msg.q)
         r.s = msg.s
+        r.targetR = msg.r
+        r.a = msg.a
       }
       break
     }
@@ -153,19 +163,28 @@ export function startMultiplayer() {
   connect()
 }
 
-/** Envia a orientação do visitante, no máximo MOVE_RATE_HZ vezes por segundo e só se mudou. */
-export function sendMove(q: Quaternion, speed: number) {
+/** Envia o movimento do visitante, no máximo MOVE_RATE_HZ vezes por segundo e só se mudou. */
+export function sendMove(
+  q: Quaternion,
+  speed: number,
+  radius: number,
+  state: keyof typeof ACTIONS,
+) {
   if (!ws) return
   const now = performance.now()
   if (now - lastSent < 1000 / MOVE_RATE_HZ) return
   const s = Math.round(speed * 100) / 100
+  const a = ACTIONS[state]
   const turned = Math.abs(lastQ.dot(q)) < 0.99999
   const stopped = s === 0 && lastS !== 0
-  if (!turned && !stopped && Math.abs(s - lastS) < 0.1) return
+  const moved = Math.abs(radius - lastR) > 0.05 || a !== lastA
+  if (!turned && !stopped && !moved && Math.abs(s - lastS) < 0.1) return
   lastSent = now
   lastQ.copy(q)
   lastS = s
-  send({ type: 'move', q: [q.x, q.y, q.z, q.w], s })
+  lastR = radius
+  lastA = a
+  send({ type: 'move', q: [q.x, q.y, q.z, q.w], s, r: radius, a })
 }
 
 export function sendEmote(emote: Emote) {

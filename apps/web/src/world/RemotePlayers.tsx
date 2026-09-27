@@ -5,9 +5,8 @@ import { type Group, Vector3 } from 'three'
 import { remotes } from '../net/multiplayer'
 import { UP } from '../lib/sphere'
 import { useStore } from '../state/store'
-import { Visitor } from './Characters'
+import { type Motion, Visitor } from './Characters'
 import { Label } from './Label'
-import { surfaceRadius } from './terrain'
 
 /** Emote sobre a cabeça de um visitante (o próprio ou outro), se houver. */
 export function EmoteBubble({ id }: { id: string }) {
@@ -23,11 +22,12 @@ export function EmoteBubble({ id }: { id: string }) {
 }
 
 const up = new Vector3()
+const STATES = ['ground', 'air', 'swim'] as const
 
 /** Outro visitante: suaviza (interpola) a orientação recebida da rede. */
 function RemoteVisitor({ id }: { id: string }) {
   const group = useRef<Group>(null)
-  const motion = useRef({ speed: 0 })
+  const motion = useRef<Motion>({ speed: 0, state: 'ground' })
   const player = remotes.get(id)
 
   useFrame((_, rawDelta) => {
@@ -36,10 +36,12 @@ function RemoteVisitor({ id }: { id: string }) {
     if (!r || !g) return
     const dt = Math.min(rawDelta, 0.1)
     r.current.slerp(r.target, 1 - Math.exp(-dt * 10))
+    r.r += (r.targetR - r.r) * (1 - Math.exp(-dt * 12))
     up.copy(UP).applyQuaternion(r.current)
-    g.position.copy(up).multiplyScalar(surfaceRadius(up))
+    g.position.copy(up).multiplyScalar(r.r)
     g.quaternion.copy(r.current)
     motion.current.speed += (r.s - motion.current.speed) * Math.min(1, dt * 8)
+    motion.current.state = STATES[r.a]
   })
 
   if (!player) return null

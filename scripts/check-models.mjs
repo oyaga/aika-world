@@ -179,6 +179,10 @@ for (const file of files.sort()) {
           `faltam as ações ${missing.join(', ')} (encontradas: ${actions.join(', ') || 'nenhuma'})`,
         )
       else ok(`ações ${rule.actions.join(' e ')}`)
+      const extra = ['Run', 'Jump', 'Swim'].filter((x) => !actions.includes(x))
+      if (extra.length)
+        console.log(`  · opcionais ausentes: ${extra.join(', ')} (usa Walk/pose parada no lugar)`)
+      else ok('ações opcionais Run, Jump e Swim')
     }
 
     if (rule.tint) {
@@ -199,6 +203,8 @@ for (const file of files.sort()) {
       if (missing.length)
         console.log(`  · sem ${missing.join(', ')}: o código usa as posições padrão`)
       const blockers = lower.filter((n) => n.startsWith('bloqueio_')).length
+      const lakes = lower.filter((n) => n.startsWith('agua_')).length
+      console.log(`  · ${lakes} superfície(s) de água agua_* (lagos para nadar)`)
       const story = lower.filter((n) => /^historia_\d+$/.test(n)).length
       console.log(`  · ${blockers} bloqueio(s), ${story} Empty(s) historia_N`)
     }

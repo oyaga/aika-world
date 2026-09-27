@@ -6,11 +6,15 @@ import { type ModelName, modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
 import { Toon } from './materials'
 import { ModelBoundary, useModelClone } from './Model'
+import type { MoveState } from './locomotion'
 import { BRAND } from './palette'
 
 /** Objeto mutável com `speed` (0..1), lido a cada frame para a animação. */
 export interface Motion {
+  /** 1 = andando, ~1,75 = correndo (0 = parado). */
   speed: number
+  /** No chão, no ar (pulo) ou nadando. Padrão: no chão. */
+  state?: MoveState
 }
 
 interface ChibiLook {
@@ -58,23 +62,58 @@ function Chibi({ motion, look }: { motion: Motion; look: ChibiLook }) {
   const legR = useRef<Group>(null)
   const armL = useRef<Group>(null)
   const armR = useRef<Group>(null)
+  const pose = useRef<Group>(null)
   const phase = useRef(0)
   const reducedMotion = useStore((s) => s.reducedMotion)
 
   useFrame((_, delta) => {
     const s = motion.speed
-    phase.current += delta * 11 * s
-    const swing = reducedMotion ? 0 : Math.sin(phase.current) * 0.7 * s
-    const bob = reducedMotion ? 0 : Math.abs(Math.sin(phase.current)) * 0.12 * s
-    if (body.current) body.current.position.y = bob
-    if (legL.current) legL.current.rotation.x = swing
-    if (legR.current) legR.current.rotation.x = -swing
-    if (armL.current) armL.current.rotation.x = -swing * 0.8
-    if (armR.current) armR.current.rotation.x = swing * 0.8
+    const state = motion.state ?? 'ground'
+    const k = Math.min(1, delta * 12)
+    const lerp = (ref: React.RefObject<Group | null>, target: number) => {
+      if (ref.current) ref.current.rotation.x += (target - ref.current.rotation.x) * k
+    }
+
+    // Nadando, o corpo deita para a frente e fica na linha d'água.
+    const p = pose.current
+    if (p) {
+      p.rotation.x += ((state === 'swim' ? 1.25 : 0) - p.rotation.x) * k
+      p.position.y += ((state === 'swim' ? 0.7 : 0) - p.position.y) * k
+    }
+    if (body.current) body.current.position.y = 0
+
+    if (state === 'air') {
+      // Pulo: braços para cima, pernas encolhidas.
+      lerp(armL, -2.6)
+      lerp(armR, -2.6)
+      lerp(legL, 0.6)
+      lerp(legR, -0.25)
+      return
+    }
+    if (state === 'swim') {
+      // Braçadas alternadas e pernas batendo.
+      phase.current += delta * (reducedMotion ? 0 : 5 + s * 2)
+      if (armL.current) armL.current.rotation.x = -phase.current
+      if (armR.current) armR.current.rotation.x = -phase.current - Math.PI
+      lerp(legL, Math.sin(phase.current * 2) * 0.4)
+      lerp(legR, -Math.sin(phase.current * 2) * 0.4)
+      return
+    }
+    // No chão: andar/correr (correndo, passos mais rápidos e mais largos).
+    phase.current += delta * 11 * Math.min(s, 1.8)
+    const amplitude = reducedMotion ? 0 : 0.7 * Math.min(s, 1) + 0.3 * Math.max(0, s - 1)
+    const swing = Math.sin(phase.current) * amplitude
+    if (body.current && !reducedMotion) {
+      body.current.position.y = Math.abs(Math.sin(phase.current)) * 0.12 * Math.min(s, 1.5)
+    }
+    lerp(legL, swing)
+    lerp(legR, -swing)
+    lerp(armL, -swing * 0.8)
+    lerp(armR, swing * 0.8)
   })
 
   return (
-    <group>
+    <group ref={pose}>
       {/* Pernas (fora do grupo com bob para os pés ficarem no chão) */}
       <group ref={legL} position={[-0.14, 0.62, 0]}>
         <Limb color={look.legs} radius={0.1} length={0.4} drop={0.3} />
@@ -141,7 +180,13 @@ function Chibi({ motion, look }: { motion: Motion; look: ChibiLook }) {
   )
 }
 
-/** Personagem .glb com as ações `Idle` e `Walk`, misturadas pela velocidade. */
+const OPTIONAL_ACTIONS = ['Idle', 'Walk', 'Run', 'Jump', 'Swim'] as const
+
+/**
+ * Personagem .glb: `Idle` e `Walk` obrigatórias; `Run`, `Jump` e `Swim`
+ * opcionais (sem elas, usa `Walk` ou a pose parada). Misturadas pela
+ * velocidade e pelo estado de movimento.
+ */
 function AnimatedGlb({ url, motion, tint }: { url: string; motion: Motion; tint?: string }) {
   const root = useModelClone(url, tint)
   const { animations } = useGLTF(url)
@@ -149,23 +194,30 @@ function AnimatedGlb({ url, motion, tint }: { url: string; motion: Motion; tint?
   const reducedMotion = useStore((s) => s.reducedMotion)
 
   useEffect(() => {
-    const idle = actions.Idle
-    const walk = actions.Walk
-    if (import.meta.env.DEV && (!idle || !walk)) {
+    if (import.meta.env.DEV && (!actions.Idle || !actions.Walk)) {
       console.warn(`[${url}] esperava as ações "Idle" e "Walk"; encontrei: ${names.join(', ')}`)
     }
-    idle?.play()
-    walk?.play().setEffectiveWeight(0)
-    return () => {
-      idle?.stop()
-      walk?.stop()
-    }
+    // Todas tocam o tempo todo; o peso de cada uma decide o que aparece.
+    const all = OPTIONAL_ACTIONS.map((n) => actions[n]).filter((a) => a != null)
+    all.forEach((a) => a.play().setEffectiveWeight(0))
+    actions.Idle?.setEffectiveWeight(1)
+    return () => all.forEach((a) => a.stop())
   }, [actions, names, url])
 
   useFrame(() => {
-    const walking = reducedMotion ? 0 : motion.speed
-    actions.Walk?.setEffectiveWeight(walking)
-    actions.Idle?.setEffectiveWeight(1 - walking)
+    const state = motion.state ?? 'ground'
+    const s = reducedMotion ? 0 : motion.speed
+    const w = { Idle: 0, Walk: 0, Run: 0, Jump: 0, Swim: 0 }
+    if (state === 'air' && actions.Jump) w.Jump = 1
+    else if (state === 'swim' && actions.Swim) w.Swim = 1
+    else {
+      const moving = Math.min(1, s)
+      const running = actions.Run ? Math.min(1, Math.max(0, (s - 1.2) / 0.4)) : 0
+      w.Walk = moving * (1 - running)
+      w.Run = running
+      w.Idle = 1 - moving
+    }
+    for (const name of OPTIONAL_ACTIONS) actions[name]?.setEffectiveWeight(w[name])
   })
 
   return <primitive object={root} />

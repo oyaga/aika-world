@@ -85,6 +85,8 @@ export class World extends DurableObject<Env> {
       color: VISITOR_COLORS[Math.floor(Math.random() * VISITOR_COLORS.length)] ?? VISITOR_COLORS[0],
       q: [0, 0, 0, 1],
       s: 0,
+      r: 20,
+      a: 0,
     }
     this.ctx.acceptWebSocket(server)
     server.serializeAttachment(you)
@@ -114,10 +116,10 @@ export class World extends DurableObject<Env> {
 
     if (msg.type === 'move') {
       if (!limits.move.take()) return
-      me.q = msg.q
-      me.s = msg.s
+      const move = { q: msg.q, s: msg.s, r: msg.r, a: msg.a }
+      Object.assign(me, move)
       ws.serializeAttachment(me)
-      this.broadcast({ type: 'move', id: me.id, q: msg.q, s: msg.s }, ws)
+      this.broadcast({ type: 'move', id: me.id, ...move }, ws)
     } else if (msg.type === 'emote') {
       if (!limits.emote.take()) return
       this.broadcast({ type: 'emote', id: me.id, emote: msg.emote }, ws)

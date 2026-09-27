@@ -2,18 +2,29 @@ import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { type Group, Quaternion, Vector3 } from 'three'
-import { AIKA_CHATTER, AIKA_GREETING, houseLine, speechDuration } from '../guide'
+import {
+  AIKA_CHATTER,
+  AIKA_GREETING,
+  AIKA_LAKE,
+  AIKA_SWIM,
+  houseLine,
+  speechDuration,
+} from '../guide'
 import { angleBetween, faceTowards, PLANET_RADIUS } from '../lib/sphere'
 import { aikaState, playerState } from '../state/player'
 import { useStore } from '../state/store'
 import { Aika } from './Characters'
 import type { Poi } from './layout'
-import { surfaceRadius } from './terrain'
+import { lakeNear } from './lakes'
+import { stepVertical, SWIM_SPEED, WALK_SPEED } from './locomotion'
+import { splashAt } from './Splashes'
+import { hasTerrainModel } from './terrain'
 
 /** Onde a Aika gosta de ficar, no referencial do visitante: ao lado e um pouco atrás. */
 const FOLLOW_OFFSET = new Vector3(1.4, 0, -1)
-const WALK_SPEED = 6 // mesma do visitante, para a animação
 const TELEPORT_GAP = 25 // m: se ficar muito para trás, reaparece ao lado
+/** A Aika pula um instantinho depois do visitante. */
+const JUMP_DELAY_MS = 180
 
 const target = new Vector3()
 const axis = new Vector3()
@@ -35,14 +46,15 @@ function followStep(dt: number) {
   if (gap > TELEPORT_GAP) {
     a.dir.copy(target)
   } else if (gap > 0.15) {
-    // Acelera quando está longe, desacelera ao chegar.
-    const speed = Math.min(12, 1.5 + gap * 2.2)
+    // Acelera quando está longe, desacelera ao chegar (nadando, mais devagar).
+    const cap = a.state === 'swim' ? SWIM_SPEED + 1 : 12
+    const speed = Math.min(cap, 1.5 + gap * 2.2)
     moved = Math.min(gap, speed * dt)
     axis.crossVectors(a.dir, target).normalize()
     a.dir.applyAxisAngle(axis, moved / PLANET_RADIUS).normalize()
   }
 
-  const walking = Math.min(1, moved / Math.max(dt, 1e-3) / WALK_SPEED)
+  const walking = Math.min(1.8, moved / Math.max(dt, 1e-3) / WALK_SPEED)
   a.speed += (walking - a.speed) * Math.min(1, dt * 10)
 
   // Andando: olha para onde vai. Parada: olha para o visitante.
@@ -50,9 +62,14 @@ function followStep(dt: number) {
   desired.copy(faceTowards(a.dir, moved > 0 ? target : visitorDir))
   a.orientation.slerp(desired, Math.min(1, dt * 8))
 
-  const ground = surfaceRadius(a.dir)
-  a.radius = a.radius === 0 ? ground : a.radius + (ground - a.radius) * Math.min(1, dt * 15)
+  // Imita o pulo do visitante, com um pequeno atraso.
+  const jumpedAt = playerState.jumpedAt
+  const wantJump =
+    jumpedAt > a.copiedJump && performance.now() - jumpedAt > JUMP_DELAY_MS && a.state !== 'air'
+  if (wantJump) a.copiedJump = jumpedAt
+  const step = stepVertical(a, a.dir, dt, wantJump)
   a.position.copy(a.dir).multiplyScalar(a.radius)
+  if (step.splash > 0) splashAt(a.position, step.splash * 0.8)
 }
 
 /** Balão de fala sobre a cabeça da Aika. Some sozinho depois de um tempo. */
@@ -126,8 +143,28 @@ export function Companion({ pois }: { pois: Poi[] }) {
   const group = useRef<Group>(null)
   useGuideSpeech(pois)
 
-  useFrame((_, rawDelta) => {
+  const remarks = useRef({ lakeAt: -Infinity, swam: false, wasSwimming: false })
+  useFrame(({ clock }, rawDelta) => {
     followStep(Math.min(rawDelta, 0.1))
+    // Comentários sobre a água: perto de um lago (no máximo a cada minuto) e no primeiro mergulho.
+    const r = remarks.current
+    const store = useStore.getState()
+    const swimming = playerState.state === 'swim'
+    if (swimming && !r.wasSwimming && !r.swam) {
+      r.swam = true
+      store.aikaSay(AIKA_SWIM)
+    } else if (
+      !swimming &&
+      !store.aikaLine &&
+      !store.openPoi &&
+      clock.elapsedTime - r.lakeAt > 60 &&
+      !hasTerrainModel() &&
+      lakeNear(visitorDir.copy(playerState.position).normalize())
+    ) {
+      r.lakeAt = clock.elapsedTime
+      store.aikaSay(AIKA_LAKE)
+    }
+    r.wasSwimming = swimming
     const g = group.current
     if (!g) return
     g.position.copy(aikaState.position)

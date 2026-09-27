@@ -18,6 +18,7 @@ import {
   randomUnitVector,
   surfaceQuaternion,
 } from '../lib/sphere'
+import { lakeNear, SHORE } from './lakes'
 import { Toon, toToon } from './materials'
 import { ModelBoundary } from './Model'
 
@@ -39,6 +40,7 @@ function scatter(seed: number, count: number, avoid: Vector3[], minAngle: number
   while (out.length < count && guard++ < count * 40) {
     const dir = randomUnitVector(rand)
     if (avoid.some((a) => angleBetween(a, dir) < minAngle)) continue
+    if (lakeNear(dir, SHORE + 0.6)) continue
     if (out.some((p) => angleBetween(p.dir, dir) < 0.08)) continue
     out.push({ dir, scale: 0.7 + rand() * 0.7, yaw: rand() * Math.PI * 2 })
   }

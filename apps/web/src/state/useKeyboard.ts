@@ -9,7 +9,7 @@ const BACK = new Set(['KeyS', 'ArrowDown'])
 const LEFT = new Set(['KeyA', 'ArrowLeft'])
 const RIGHT = new Set(['KeyD', 'ArrowRight'])
 
-/** Teclado: WASD/setas para andar, E para interagir, 1–4 emotes, Esc para fechar. */
+/** Teclado: WASD/setas andam, Shift corre, Espaço pula, E interage, 1–4 emotes, Esc fecha. */
 export function useKeyboard() {
   useEffect(() => {
     const pressed = new Set<string>()
@@ -37,6 +37,15 @@ export function useKeyboard() {
         sendEmote(emote)
         return
       }
+      if (e.code === 'Space' && !store.openPoi) {
+        e.preventDefault()
+        if (!e.repeat) input.jumpQueued = true
+        return
+      }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        input.keyRun = true
+        return
+      }
       if (e.code === 'KeyE' && !e.repeat) {
         if (store.openPoi) store.close()
         else if (store.nearPoi) store.open(store.nearPoi)
@@ -49,10 +58,12 @@ export function useKeyboard() {
       }
     }
     const onUp = (e: KeyboardEvent) => {
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.keyRun = false
       pressed.delete(e.code)
       sync()
     }
     const onBlur = () => {
+      input.keyRun = false
       pressed.clear()
       sync()
     }

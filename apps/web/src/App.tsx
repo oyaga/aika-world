@@ -83,8 +83,8 @@ export function App() {
               <kbd>W</kbd>
               <kbd>A</kbd>
               <kbd>S</kbd>
-              <kbd>D</kbd> para andar · <kbd>E</kbd> para interagir · <kbd>1</kbd>–<kbd>4</kbd>{' '}
-              emotes
+              <kbd>D</kbd> andar · <kbd>Shift</kbd> correr · <kbd>Espaço</kbd> pular · <kbd>E</kbd>{' '}
+              interagir · <kbd>1</kbd>–<kbd>4</kbd> emotes
             </p>
           </header>
           <p className="sr-only" aria-live="polite">

@@ -72,7 +72,9 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 ## Aika
 
 - Um mesh com **Armature**.
-- Ações com estes nomes exatos: **`Idle`** e **`Walk`**. `Wave` é opcional, para um emote futuro.
+- Ações com estes nomes exatos: **`Idle`** e **`Walk`** (obrigatórias) e, opcionais, **`Run`**
+  (correr), **`Jump`** (no ar, durante o pulo) e **`Swim`** (nadando, corpo deitado na linha
+  d'água). Sem as opcionais, o código usa `Walk` ou a pose parada. `Wave` também é opcional.
 - `Walk` anda **no lugar**, sem sair da origem: quem move a Aika é o código (ela segue o
   visitante e anda ao lado dele).
 - As duas ações devem fazer loop. Na exportação, marque **Animation → Export all actions** (ou
@@ -102,14 +104,19 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 ### Nomes especiais (objetos dentro do `planeta.glb`)
 
-| Nome                                | Tipo  | Efeito                                                                                                                                                 |
-| ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `bloqueio_*` (ex.: `bloqueio_lago`) | Mesh  | Barreira invisível: o visitante não entra na área que ele cobre visto de cima.                                                                         |
-| `poi_templo`, `poi_correio`         | Empty | Posição do marco (sem `poi_correio`, a caixa fica ao lado do templo). Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
-| `area_servicos`                     | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).                                                             |
-| `area_vila`                         | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).                                                       |
-| `historia_1`, `historia_2`, …       | Empty | Posição dos NPCs da Trilha da história, na ordem dos marcos (a placa fica 1,3 m atrás).                                                                |
+| Nome                                 | Tipo  | Efeito                                                                                                                                                 |
+| ------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bloqueio_*` (ex.: `bloqueio_pedra`) | Mesh  | Barreira invisível: o visitante não entra na área que ele cobre visto de cima.                                                                         |
+| `agua_*` (ex.: `agua_lago`)          | Mesh  | Superfície da água de um lago: nadar, pular e respingar.                                                                                               |
+| `poi_templo`, `poi_correio`          | Empty | Posição do marco (sem `poi_correio`, a caixa fica ao lado do templo). Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
+| `area_servicos`                      | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).                                                             |
+| `area_vila`                          | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).                                                       |
+| `historia_1`, `historia_2`, …        | Empty | Posição dos NPCs da Trilha da história, na ordem dos marcos (a placa fica 1,3 m atrás).                                                                |
 
+- **Lagos:** afunde a bacia no terreno e cubra com um mesh plano (ou uma calota) nomeado
+  `agua_*` (ex.: `agua_lago_norte`) na altura da superfície da água. Onde a água tem mais de
+  0,9 m de profundidade, o personagem nada; mais raso, ele anda dentro d'água. Dá para pular no
+  lago e sair pulando. Use um material `@unlit` ou transparente para a água.
 - O **spawn** do visitante é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
 - Para a propriedade `raio`: selecione o Empty → Object Properties → Custom Properties → Add, e
   marque **Include → Custom Properties** na exportação.
