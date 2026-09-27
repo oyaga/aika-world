@@ -1,6 +1,5 @@
 import { EMOTES } from '@aika-world/shared'
 import { multiplayerEnabled, sendEmote } from '../net/multiplayer'
-import { input } from '../state/input'
 import { useStore } from '../state/store'
 
 /** Emotes (teclas 1–4) e quantos visitantes estão no planeta agora. */
@@ -21,17 +20,6 @@ export function EmoteBar() {
               : 'Offline'}
         </p>
       )}
-      <button
-        type="button"
-        className="jump-button"
-        onPointerDown={(e) => {
-          e.preventDefault()
-          input.jumpQueued = true
-        }}
-        aria-label="Pular (Espaço)"
-      >
-        ⤒ Pular
-      </button>
       <div className="emote-bar__buttons" role="group" aria-label="Emotes">
         {EMOTES.map((emote, i) => (
           <button

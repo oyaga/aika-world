@@ -12,16 +12,16 @@ Inspirado em
 
 ## Como jogar
 
-| Ação                   | Teclado              | Toque                     |
-| ---------------------- | -------------------- | ------------------------- |
-| Andar para frente/trás | `W` / `S` ou `↑` `↓` | Joystick (canto inferior) |
-| Virar                  | `A` / `D` ou `←` `→` | Joystick                  |
-| Correr                 | `Shift` (segurado)   | Joystick até a borda      |
-| Pular                  | `Espaço`             | Botão "Pular"             |
-| Nadar                  | entre num lago fundo | entre num lago fundo      |
-| Interagir / conversar  | `E`                  | Botão "Toque para abrir"  |
-| Emotes                 | `1`–`4`              | Botões 👋 🎉 ❤️ 😂        |
-| Fechar painel          | `Esc`                | ✕ no painel               |
+| Ação                   | Teclado              | Toque                         |
+| ---------------------- | -------------------- | ----------------------------- |
+| Andar para frente/trás | `W` / `S` ou `↑` `↓` | Joystick (canto inferior)     |
+| Virar                  | `A` / `D` ou `←` `→` | Joystick                      |
+| Correr                 | `Shift` (segurado)   | Botão "Correr" (liga/desliga) |
+| Pular                  | `Espaço`             | Botão "Pular"                 |
+| Nadar                  | entre num lago fundo | entre num lago fundo          |
+| Interagir / conversar  | `E`                  | Botão "Falar" / "Abrir"       |
+| Emotes                 | `1`–`4`              | Botões 👋 🎉 ❤️ 😂 no arco    |
+| Fechar painel          | `Esc`                | ✕ no painel                   |
 
 O botão **Versão simples** (canto superior direito) mostra todo o conteúdo em uma lista HTML
 acessível, sem 3D. A animação respeita `prefers-reduced-motion`.
@@ -116,8 +116,8 @@ quatro casas secretas.
 - **Casas**: distribuídas com uma esfera de Fibonacci; altura por `log(estrelas + 1)` + atividade
   recente; cor pela linguagem.
 - **Pular, correr e nadar**: sem biblioteca de física. A gravidade puxa para o centro do planeta
-  (`world/locomotion.ts`); Espaço pula, Shift corre (no celular, joystick até a borda + botão
-  de pulo) e, na água funda dos lagos, o personagem nada e respinga ao cair. Os lagos do planeta
+  (`world/locomotion.ts`); Espaço pula, Shift corre (no celular: joystick à esquerda e botões em
+  arco à direita — Pular, Correr, Falar e emotes) e, na água funda dos lagos, o personagem nada e respinga ao cair. Os lagos do planeta
   procedural ficam em `world/lakes.ts`; com `planeta.glb`, são os meshes `agua_*`.
 - **Aika, a guia**: anda ao lado do visitante (acelera quando fica para trás), fala o nome e a
   descrição de cada repositório quando ele chega perto e, de tempos em tempos, solta um

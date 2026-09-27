@@ -1,6 +1,6 @@
-import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { Matrix4, Quaternion, Vector3 } from 'three'
+import { useEffect, useRef } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { Matrix4, type PerspectiveCamera, Quaternion, Vector3 } from 'three'
 import { playerState } from '../state/player'
 
 const OFFSET = new Vector3(0, 6.5, -10) // atrás (-Z) e acima (+Y) no referencial local
@@ -15,6 +15,14 @@ const desiredQuat = new Quaternion()
 /** Câmera em terceira pessoa que segue a Aika suavemente no referencial local dela. */
 export function CameraRig() {
   const initialized = useRef(false)
+  const camera = useThree((s) => s.camera) as PerspectiveCamera
+  const aspect = useThree((s) => s.size.width / s.size.height)
+
+  // Celular em pé: campo de visão mais aberto para a cena não ficar espremida.
+  useEffect(() => {
+    camera.fov = aspect < 0.8 ? 78 : aspect < 1.2 ? 66 : 55
+    camera.updateProjectionMatrix()
+  }, [camera, aspect])
 
   useFrame(({ camera }, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1)

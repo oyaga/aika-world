@@ -231,10 +231,10 @@ button {
 /* Joystick */
 .joystick {
   position: fixed;
-  left: 24px;
-  bottom: 24px;
-  width: 120px;
-  height: 120px;
+  left: max(20px, env(safe-area-inset-left));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.12);
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -702,22 +702,157 @@ button {
   }
 }
 
-/* Botão de pulo (só em telas de toque) */
-.jump-button {
-  display: none;
-  min-width: 96px;
-  height: 56px;
-  border-radius: 999px;
-  border: 2px solid var(--accent);
-  background: rgba(255, 90, 2, 0.25);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1rem;
-  touch-action: none;
+/* Controles de toque: botões em arco em volta do "Pular" (estilo jogos mobile) */
+.touch-actions {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: 260px;
+  height: 260px;
+  z-index: 10;
+  pointer-events: none;
+  transform-origin: bottom right;
 }
 
+.touch-btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(20, 16, 40, 0.55);
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.touch-btn small {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+
+.touch-btn:active {
+  transform: scale(0.92);
+}
+
+/* Pular: o botão principal */
+.touch-btn--jump {
+  right: 18px;
+  bottom: 18px;
+  width: 88px;
+  height: 88px;
+  font-size: 2rem;
+  border-color: var(--accent);
+  background: radial-gradient(circle at 35% 30%, #ff8a3d, var(--accent) 60%, #c94500);
+}
+
+.touch-btn--run,
+.touch-btn--use {
+  width: 62px;
+  height: 62px;
+}
+
+/* Ângulos em volta do centro do Pular (raio 100 px): Interagir a 180°, Correr a 128° */
+.touch-btn--use {
+  right: 131px;
+  bottom: 31px;
+}
+
+.touch-btn--run {
+  right: 93px;
+  bottom: 110px;
+}
+
+.touch-btn--run.is-on {
+  border-color: var(--accent);
+  background: rgba(255, 90, 2, 0.6);
+  box-shadow:
+    0 0 0 3px rgba(255, 90, 2, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.touch-btn--use:disabled {
+  opacity: 0.35;
+}
+
+.touch-btn--use.is-ready {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.25);
+  animation: touch-ready 1.2s ease-in-out infinite;
+}
+
+@keyframes touch-ready {
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(255, 255, 255, 0.25),
+      0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* Emotes no arco de fora (raio 165 px) */
+.touch-btn--emote {
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+}
+
+.touch-btn--emote-0 {
+  right: 54px;
+  bottom: 204px;
+}
+
+.touch-btn--emote-1 {
+  right: 117px;
+  bottom: 186px;
+}
+
+.touch-btn--emote-2 {
+  right: 168px;
+  bottom: 144px;
+}
+
+.touch-btn--emote-3 {
+  right: 199px;
+  bottom: 86px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .touch-btn--use.is-ready {
+    animation: none;
+  }
+}
+
+/* Celular em pé (tela estreita): arco menor para caber ao lado do joystick */
+@media (max-width: 480px) {
+  .touch-actions {
+    transform: scale(0.78);
+  }
+  .hint {
+    bottom: 220px;
+  }
+  .joystick {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+/* No toque, os emotes e o botão de interagir ficam no arco; a barra só mostra quem está online */
 @media (hover: none) and (pointer: coarse) {
-  .jump-button {
-    display: block;
+  .emote-bar {
+    top: 64px;
+    bottom: auto;
+  }
+  .emote-bar__buttons,
+  .hint__button {
+    display: none;
   }
 }

@@ -12,6 +12,8 @@ export const input = {
   joyY: 0,
   /** Shift segurado. */
   keyRun: false,
+  /** Modo corrida ligado pelo botão "Correr" (celular). */
+  runToggle: false,
   /** Pulo pedido (Espaço ou botão); consumido pelo Player no próximo frame. */
   jumpQueued: false,
 }
@@ -19,8 +21,7 @@ export const input = {
 export function readAxes(): { forward: number; turn: number; run: boolean } {
   const forward = Math.max(-1, Math.min(1, input.keyForward + input.joyY))
   const turn = Math.max(-1, Math.min(1, input.keyTurn - input.joyX))
-  // No celular, empurrar o joystick até a borda também corre.
-  const run = input.keyRun || Math.hypot(input.joyX, input.joyY) > 0.92
+  const run = input.keyRun || input.runToggle
   return { forward, turn, run }
 }
 

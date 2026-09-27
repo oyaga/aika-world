@@ -9,6 +9,7 @@ import { Joystick } from './ui/Joystick'
 import { Loading } from './ui/Loading'
 import { Panel } from './ui/Panel'
 import { SimpleView } from './ui/SimpleView'
+import { TouchControls } from './ui/TouchControls'
 import { SERVICES, STORY } from './content'
 import {
   DEFAULT_SERVICES_CENTER,
@@ -94,6 +95,7 @@ export function App() {
           <EmoteBar />
           <Panel pois={pois} />
           <Joystick />
+          <TouchControls pois={pois} />
         </>
       )}
 

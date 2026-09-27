@@ -1,22 +1,17 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { isTouchDevice } from '../lib/device'
 import { input } from '../state/input'
+import { useStore } from '../state/store'
 
-const RADIUS = 48
+const RADIUS = 56
 
-function isTouchDevice(): boolean {
-  if (typeof window === 'undefined') return false
-  return (
-    'ontouchstart' in window ||
-    (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches)
-  )
-}
-
-/** Joystick virtual (toque) no canto inferior esquerdo. */
+/** Joystick virtual (toque) no canto inferior esquerdo: só anda (correr e pular são botões). */
 export function Joystick() {
   const [visible] = useState(isTouchDevice)
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const base = useRef<HTMLDivElement>(null)
   const active = useRef<number | null>(null)
+  const hidden = useStore((s) => s.openPoi !== null)
 
   useEffect(
     () => () => {
@@ -26,7 +21,15 @@ export function Joystick() {
     [],
   )
 
-  if (!visible) return null
+  useEffect(() => {
+    if (!hidden) return
+    active.current = null
+    setKnob({ x: 0, y: 0 })
+    input.joyX = 0
+    input.joyY = 0
+  }, [hidden])
+
+  if (!visible || hidden) return null
 
   const update = (e: PointerEvent<HTMLDivElement>) => {
     const rect = base.current?.getBoundingClientRect()
