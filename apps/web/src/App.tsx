@@ -2,6 +2,8 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { useStore } from './state/store'
 import { useKeyboard } from './state/useKeyboard'
+import { startMultiplayer } from './net/multiplayer'
+import { EmoteBar } from './ui/EmoteBar'
 import { Hint } from './ui/Hint'
 import { Joystick } from './ui/Joystick'
 import { Loading } from './ui/Loading'
@@ -29,6 +31,7 @@ export function App() {
 
   useEffect(() => {
     void loadWorld()
+    startMultiplayer()
   }, [loadWorld])
   useKeyboard()
 
@@ -80,13 +83,15 @@ export function App() {
               <kbd>W</kbd>
               <kbd>A</kbd>
               <kbd>S</kbd>
-              <kbd>D</kbd> para andar · <kbd>E</kbd> para interagir
+              <kbd>D</kbd> para andar · <kbd>E</kbd> para interagir · <kbd>1</kbd>–<kbd>4</kbd>{' '}
+              emotes
             </p>
           </header>
           <p className="sr-only" aria-live="polite">
             {aikaLine ? `Aika: ${aikaLine.text}` : ''}
           </p>
           <Hint pois={pois} />
+          <EmoteBar />
           <Panel pois={pois} />
           <Joystick />
         </>

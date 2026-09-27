@@ -5,7 +5,9 @@ import { angleBetween, PLANET_RADIUS, positionFromOrientation, turn, UP, walk } 
 import { readAxes } from '../state/input'
 import { playerState } from '../state/player'
 import { useStore } from '../state/store'
+import { sendMove } from '../net/multiplayer'
 import { Visitor } from './Characters'
+import { EmoteBubble } from './RemotePlayers'
 import { INTERACT_DISTANCE, type Poi, poiAnchor } from './layout'
 import { isBlocked, surfaceRadius } from './terrain'
 
@@ -24,6 +26,7 @@ const upDir = new Vector3()
 export function Player({ pois }: { pois: Poi[] }) {
   const group = useRef<Group>(null)
   const visitorColor = useStore((s) => s.visitorColor)
+  const myId = useStore((s) => s.net.me?.id ?? 'me')
   const anchors = useMemo(() => pois.map(poiAnchor), [pois])
 
   useFrame((_, rawDelta) => {
@@ -56,6 +59,7 @@ export function Player({ pois }: { pois: Poi[] }) {
       group.current.position.copy(playerState.position)
       group.current.quaternion.copy(q)
     }
+    sendMove(q, playerState.speed < 0.05 ? 0 : playerState.speed)
 
     // Proximidade com pontos de interesse.
     let nearest: Poi | null = null
@@ -75,6 +79,7 @@ export function Player({ pois }: { pois: Poi[] }) {
   return (
     <group ref={group}>
       <Visitor motion={playerState} color={visitorColor} />
+      <EmoteBubble id={myId} />
     </group>
   )
 }

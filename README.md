@@ -46,7 +46,7 @@ aika-world/
 │   │       ├── lib/models.ts   # Descobre os .glb disponíveis
 │   │       ├── assets/models/  # Modelos .glb do Blender (ver docs/arte.md)
 │   │       └── content.tsx     # Textos (na voz da Aika), serviços, contatos e a Trilha da história
-│   └── server/                 # Cloudflare Worker (/health) + Durable Object `World` (stub)
+│   └── server/                 # Cloudflare Worker + Durable Object `World` (salas multiplayer)
 ├── packages/shared/            # Tipos: WorldData, RepoHouse, mensagens do protocolo
 ├── scripts/generate-world.mjs  # Gera world.json a partir da API do GitHub
 ├── docs/arte.md                # Guia para modelar e exportar do Blender
@@ -65,11 +65,30 @@ pnpm lint         # ESLint
 pnpm build        # build de produção (apps/web/dist)
 ```
 
-Servidor (opcional, ainda é só um esqueleto):
+### Multiplayer (opcional)
+
+Sem servidor, o planeta funciona sozinho. Para ver outros visitantes ao vivo:
 
 ```bash
-pnpm --filter @aika-world/server dev   # wrangler dev → GET /health responde "ok"
+pnpm --filter @aika-world/server dev     # servidor local em http://localhost:8787
+cp apps/web/.env.example apps/web/.env    # e descomente VITE_WORLD_URL=ws://localhost:8787/world
+pnpm dev                                  # abra em duas abas para se ver andando
+pnpm --filter @aika-world/server smoke    # teste de fumaça do protocolo (com o servidor rodando)
 ```
+
+Publicando na Cloudflare:
+
+1. `pnpm --filter @aika-world/server exec wrangler login` (uma vez) e depois
+   `pnpm --filter @aika-world/server run deploy`. O comando mostra a URL do Worker.
+2. No build do site (ex.: Cloudflare Pages), defina `VITE_WORLD_URL=wss://<url-do-worker>/world`.
+3. Opcional: restrinja quem pode conectar com a variável do Worker
+   `ALLOWED_ORIGINS=https://seu-dominio.com` (no painel ou em `wrangler.toml` → `[vars]`).
+
+Como funciona: cada sala é um Durable Object `World` com WebSockets em modo de hibernação
+(conexões paradas não custam nada). O servidor dá a cada visitante um nome ("Viajante #427") e uma
+cor, repassa só a orientação (quaternion) e a velocidade de cada um, valida tudo o que chega e
+limita mensagens por conexão. Cabem 50 visitantes por sala; acima disso o cliente vai para a
+próxima (até 5). O protocolo fica em `packages/shared/src/protocol.ts`.
 
 ### Gerando o mundo a partir do GitHub
 
@@ -108,8 +127,9 @@ quatro casas secretas.
 
 ## Roadmap
 
-1. **Protótipo** ✅ — planeta, Aika andando, câmera, pontos de interesse, painéis, versão simples.
-2. **Multiplayer** — Cloudflare Durable Objects + WebSocket para ver outros visitantes andando.
+1. **Protótipo** ✅ — planeta, visitante andando com a Aika de guia, câmera, pontos de interesse, painéis, versão simples.
+2. **Multiplayer** ✅ — Cloudflare Durable Objects + WebSocket: visitantes ao vivo, nomes, cores e
+   emotes (falta publicar o Worker).
 3. **Commits ao vivo** — GitHub App enviando eventos de push; casas reagem em tempo real.
 4. **Arte** 🚧 — carregamento dos `.glb` pronto; modelos no Blender (Aika em `.glb` com animações) e shader cartoon próprio.
 5. **Conteúdo e acabamento** — textos finais, versão 2D completa, som, SEO e performance.

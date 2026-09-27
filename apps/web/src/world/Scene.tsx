@@ -18,6 +18,7 @@ import {
 import { Planet } from './Planet'
 import { Player } from './Player'
 import { Props } from './Props'
+import { RemotePlayers } from './RemotePlayers'
 import { ServiceDistrict } from './ServiceDistrict'
 import { Trail } from './Trail'
 
@@ -63,6 +64,7 @@ export function Scene({ landmarks, story, services, houses, pois, onReady }: Sce
       <Houses houses={houses} />
       <Player pois={pois} />
       <Companion pois={pois} />
+      <RemotePlayers />
       <CameraRig />
     </>
   )

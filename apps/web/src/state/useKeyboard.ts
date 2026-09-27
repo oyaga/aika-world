@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { EMOTES } from '@aika-world/shared'
+import { sendEmote } from '../net/multiplayer'
 import { input } from './input'
 import { useStore } from './store'
 
@@ -7,7 +9,7 @@ const BACK = new Set(['KeyS', 'ArrowDown'])
 const LEFT = new Set(['KeyA', 'ArrowLeft'])
 const RIGHT = new Set(['KeyD', 'ArrowRight'])
 
-/** Teclado: WASD/setas para andar, E para interagir, Esc para fechar. */
+/** Teclado: WASD/setas para andar, E para interagir, 1–4 emotes, Esc para fechar. */
 export function useKeyboard() {
   useEffect(() => {
     const pressed = new Set<string>()
@@ -29,6 +31,12 @@ export function useKeyboard() {
         return
       }
       if (store.simpleView) return
+      const digit = /^Digit([1-9])$/.exec(e.code)?.[1]
+      const emote = digit ? EMOTES[Number(digit) - 1] : undefined
+      if (emote && !store.openPoi && !e.repeat) {
+        sendEmote(emote)
+        return
+      }
       if (e.code === 'KeyE' && !e.repeat) {
         if (store.openPoi) store.close()
         else if (store.nearPoi) store.open(store.nearPoi)
