@@ -1,5 +1,6 @@
 import type { Vector3 } from 'three'
 import type { RepoHouse, WorldData } from '@aika-world/shared'
+import type { StoryMilestone } from '../content'
 import type { Markers } from '../state/store'
 import { angleBetween, dirFromAngles, fibonacciSphere, PLANET_RADIUS, UP } from '../lib/sphere'
 
@@ -24,7 +25,16 @@ export interface HousePoi {
   dir: Vector3
 }
 
-export type Poi = LandmarkPoi | HousePoi
+export interface StoryPoi {
+  kind: 'story'
+  id: `historia:${number}`
+  index: number
+  milestone: StoryMilestone
+  label: string
+  dir: Vector3
+}
+
+export type Poi = LandmarkPoi | HousePoi | StoryPoi
 
 /** Raio (unidades de mundo, na superfície) para mostrar a dica de interação. */
 export const INTERACT_DISTANCE = 4
@@ -63,8 +73,39 @@ export function resolveLandmarks(markers: Markers | null): LandmarkPoi[] {
 }
 
 /** Direções reservadas (spawn + marcos) onde casas e props não devem ficar. */
-export function reservedDirs(landmarks: LandmarkPoi[]): Vector3[] {
-  return [UP.clone(), ...landmarks.map((l) => l.dir)]
+export function reservedDirs(landmarks: LandmarkPoi[], story: StoryPoi[] = []): Vector3[] {
+  return [UP.clone(), ...landmarks.map((l) => l.dir), ...story.map((s) => s.dir)]
+}
+
+/** Trilha da história: anel em torno do planeta, abaixo dos marcos. */
+export const TRAIL_POLAR_DEG = 62
+const TRAIL_POLAR = (TRAIL_POLAR_DEG * Math.PI) / 180
+const TRAIL_START_AZIMUTH = 60 // entre o Templo e a Oficina
+const TRAIL_STEP_DEG = 36 // distância angular entre placas
+
+/** Pedras do caminho, a cada ~2 m, dando a volta inteira. */
+export function trailDirs(): Vector3[] {
+  const circumference = 2 * Math.PI * PLANET_RADIUS * Math.sin(TRAIL_POLAR)
+  const n = Math.round(circumference / 2)
+  return Array.from({ length: n }, (_, i) => dirFromAngles(TRAIL_POLAR_DEG, (i * 360) / n))
+}
+
+/** Placas da história: nos Empties `historia_N` ou ao longo do anel. */
+export function layoutStory(story: StoryMilestone[], markers: Markers | null): StoryPoi[] {
+  return story.map((milestone, index) => ({
+    kind: 'story',
+    id: `historia:${index}`,
+    index,
+    milestone,
+    label: `${milestone.when} · ${milestone.title}`,
+    dir:
+      markers?.story[index] ??
+      dirFromAngles(TRAIL_POLAR_DEG + 4, TRAIL_START_AZIMUTH + index * TRAIL_STEP_DEG),
+  }))
+}
+
+function awayFromTrail(p: Vector3): boolean {
+  return Math.abs(Math.acos(Math.max(-1, Math.min(1, p.y))) - TRAIL_POLAR) > 0.18
 }
 
 const HOUSE_SPACING = 4.5 // metros entre casas dentro da vila
@@ -92,7 +133,7 @@ function layoutVillage(
   const spacing = HOUSE_SPACING / PLANET_RADIUS
   const n = Math.ceil((4 * Math.PI) / (spacing * spacing))
   const candidates = fibonacciSphere(n)
-    .filter((p) => reserved.every((r) => angleBetween(p, r) > spacing * 1.5))
+    .filter((p) => awayFromTrail(p) && reserved.every((r) => angleBetween(p, r) > spacing * 1.5))
     .map((p) => ({ p, a: angleBetween(p, vila.dir) }))
     .sort((x, y) => x.a - y.a)
   const cap = vila.radius / PLANET_RADIUS
@@ -112,17 +153,18 @@ function layoutVillage(
 export function layoutHouses(
   world: WorldData | null,
   landmarks: LandmarkPoi[],
+  story: StoryPoi[],
   vila: Markers['vila'] = null,
 ): HousePoi[] {
   const houses = world?.houses ?? []
   if (houses.length === 0) return []
-  const reserved = reservedDirs(landmarks)
+  const reserved = reservedDirs(landmarks, story)
   if (vila) return layoutVillage(houses, reserved, vila)
   const minAngle = 0.42 // ~24°
   let count = houses.length + reserved.length * 2
   for (let attempt = 0; attempt < 8; attempt++) {
-    const candidates = fibonacciSphere(count).filter((p) =>
-      reserved.every((r) => angleBetween(p, r) > minAngle),
+    const candidates = fibonacciSphere(count).filter(
+      (p) => awayFromTrail(p) && reserved.every((r) => angleBetween(p, r) > minAngle),
     )
     if (candidates.length >= houses.length) return toHousePois(houses, candidates)
     count += houses.length
@@ -163,6 +205,6 @@ export function houseHeight(house: RepoHouse, now = Date.now()): number {
 }
 
 export function poiTitle(poi: Poi): string {
-  if (poi.kind === 'landmark') return poi.label
+  if (poi.kind === 'landmark' || poi.kind === 'story') return poi.label
   return poi.house.secret ? 'Projeto secreto 🔒' : poi.house.name
 }

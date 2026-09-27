@@ -9,6 +9,8 @@ export type PoiId = string
 export interface Markers {
   landmarks: Partial<Record<LandmarkKind, { dir: Vector3; forward: Vector3 | null }>>
   vila: { dir: Vector3; radius: number } | null
+  /** Empties `historia_1`, `historia_2`… (índice 0 = historia_1). */
+  story: Vector3[]
 }
 
 interface AppState {

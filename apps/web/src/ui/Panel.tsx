@@ -16,7 +16,12 @@ export function Panel({ pois }: { pois: Poi[] }) {
   }, [poi])
 
   if (!poi) return null
-  const title = poi.kind === 'landmark' ? SECTIONS[poi.id].title : poiTitle(poi)
+  const title =
+    poi.kind === 'landmark'
+      ? SECTIONS[poi.id].title
+      : poi.kind === 'story'
+        ? poi.milestone.title
+        : poiTitle(poi)
 
   return (
     <div className="panel-backdrop" onClick={close}>
@@ -40,7 +45,14 @@ export function Panel({ pois }: { pois: Poi[] }) {
           </button>
         </header>
         <div className="panel__body">
-          {poi.kind === 'landmark' ? SECTIONS[poi.id].body : <RepoDetails house={poi.house} />}
+          {poi.kind === 'landmark' && SECTIONS[poi.id].body}
+          {poi.kind === 'house' && <RepoDetails house={poi.house} />}
+          {poi.kind === 'story' && (
+            <>
+              <p className="story__when">{poi.milestone.when}</p>
+              <p>{poi.milestone.text}</p>
+            </>
+          )}
         </div>
         <footer className="panel__footer">
           <kbd>Esc</kbd> para fechar

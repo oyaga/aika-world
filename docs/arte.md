@@ -39,18 +39,20 @@ ou falhar, a forma simples continua aparecendo. Os `.blend` podem ficar em `art/
   - `@unlit`: sem luz nem sombra, cor pura (lâmpadas, neon, água brilhante). Ex.: `Luz@unlit`.
   - `@tint`: recebe a cor da linguagem do repositório (só na `casa.glb`). Ex.: `Parede@tint`.
 
-Paleta do protótipo:
+Paleta: mundo colorido e lúdico, com as cores da marca Aika (aikanakamura.com) nos detalhes
+da personagem e nos pontos de interesse (telhados, placas, antena).
 
-| Uso           | Cor       |
-| ------------- | --------- |
-| Roupa da Aika | `#f06c9b` |
-| Cabelo        | `#3b2a6b` |
-| Pele          | `#f6d2b8` |
-| Detalhes      | `#ffd166` |
-| Neon          | `#5ce1e6` |
-| Telhado       | `#d0605e` |
-| Grama         | `#8fd18a` |
-| Céu / fundo   | `#1b1733` |
+| Uso                    | Cor       |
+| ---------------------- | --------- |
+| **Marca: laranja**     | `#ff5a02` |
+| **Marca: verde neon**  | `#00ff41` |
+| **Marca: quase preto** | `#0d0a08` |
+| Roupa da Aika          | `#f06c9b` |
+| Cabelo                 | `#3b2a6b` |
+| Pele                   | `#f6d2b8` |
+| Grama                  | `#8fd18a` |
+| Caminho                | `#e9d8a6` |
+| Céu / fundo            | `#1b1733` |
 
 ## Limite de triângulos
 
@@ -78,6 +80,9 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 - Comece com uma **Icosphere** (subdivisões 4 ou 5), origem no centro do planeta em (0, 0, 0).
 - Relevo é bem-vindo: morros suaves, lago afundado, caminho. A Aika segue a altura do terreno.
+- **Trilha da história:** modele um caminho que dá a volta inteira no planeta. Ao longo dele ficam
+  as placas com os marcos da vida do Felipe, posicionadas pelos Empties `historia_N`. Sem os
+  Empties, o código coloca as placas num anel a cerca de 62° do polo norte.
   Evite paredes verticais onde ela anda.
 - Mantenha a superfície andável entre **19 e 21 m** do centro.
 - A decoração fixa (árvores, pedras, cercas) pode ser modelada direto no planeta. Com
@@ -90,6 +95,7 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 | `bloqueio_*` (ex.: `bloqueio_lago`)      | Mesh  | Barreira invisível: a Aika não entra na área que ele cobre visto de cima.                          |
 | `poi_templo`, `poi_oficina`, `poi_torre` | Empty | Posição do marco. Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
 | `area_vila`                              | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).   |
+| `historia_1`, `historia_2`, …            | Empty | Posição das placas da Trilha da história, na ordem dos marcos.                                     |
 
 - O **spawn** da Aika é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
 - Para a propriedade `raio`: selecione o Empty → Object Properties → Custom Properties → Add, e

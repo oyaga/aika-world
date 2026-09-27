@@ -25,7 +25,8 @@ const DEFAULT_VILA_RADIUS = 12 // metros
  * - `bloqueio_*`  → mesh invisível onde não se anda;
  * - `poi_templo`, `poi_oficina`, `poi_torre` → Empty com a posição do marco
  *   (a frente do Empty, −Y no Blender, é para onde o prédio olha);
- * - `area_vila`   → Empty no centro da vila das casas (propriedade `raio` em metros).
+ * - `area_vila`   → Empty no centro da vila das casas (propriedade `raio` em metros);
+ * - `historia_1`, `historia_2`… → Empties com a posição das placas da história.
  */
 export function Planet() {
   const url = modelUrl('planeta')
@@ -43,7 +44,7 @@ const tmpPos = new Vector3()
 const tmpQuat = new Quaternion()
 
 function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blockers: Mesh[] } {
-  const markers: Markers = { landmarks: {}, vila: null }
+  const markers: Markers = { landmarks: {}, vila: null, story: [] }
   const ground: Mesh[] = []
   const blockers: Mesh[] = []
   root.updateMatrixWorld(true)
@@ -70,6 +71,9 @@ function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blocke
         dir,
         forward: rotated ? new Vector3(0, 0, 1).applyQuaternion(tmpQuat) : null,
       }
+    } else if (/^historia_\d+$/.test(name)) {
+      const n = Number(name.slice('historia_'.length))
+      if (n >= 1) markers.story[n - 1] = dir
     } else if (name === 'area_vila') {
       const raio = Number((obj.userData as { raio?: unknown }).raio)
       markers.vila = { dir, radius: raio > 0 ? raio : DEFAULT_VILA_RADIUS }

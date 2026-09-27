@@ -1,8 +1,9 @@
 # Aika World 🪐
 
-Um portfólio em 3D: um pequeno planeta onde a personagem **Aika** caminha entre prédios e casinhas.
-Cada casinha é um repositório do GitHub de [@oyaga](https://github.com/oyaga); os prédios maiores
-contam quem está por trás deles (Sobre, Serviços e Contato). Inspirado em
+O planeta de **Felipe Kenji "Nakamura"** em 3D: seus projetos, serviços e história, com a
+**Aika**, a agente de IA criada por ele, como guia. Cada casinha é um repositório do GitHub de
+[@oyaga](https://github.com/oyaga); os prédios contam quem está por trás deles (Sobre, Serviços e
+Contato) e a Trilha da história dá a volta no planeta com os marcos da vida dele. Inspirado em
 [messenger.abeto.co](https://messenger.abeto.co/).
 
 ![Captura de tela do protótipo](docs/screenshot.png)
@@ -42,7 +43,7 @@ aika-world/
 │   │       ├── lib/sphere.ts   # Matemática na esfera (quaternions, Fibonacci, RNG)
 │   │       ├── lib/models.ts   # Descobre os .glb disponíveis
 │   │       ├── assets/models/  # Modelos .glb do Blender (ver docs/arte.md)
-│   │       └── content.tsx     # Textos das seções (pt-BR)
+│   │       └── content.tsx     # Textos (na voz da Aika), serviços, contatos e a Trilha da história
 │   └── server/                 # Cloudflare Worker (/health) + Durable Object `World` (stub)
 ├── packages/shared/            # Tipos: WorldData, RepoHouse, mensagens do protocolo
 ├── scripts/generate-world.mjs  # Gera world.json a partir da API do GitHub

@@ -5,6 +5,7 @@ import type { Group } from 'three'
 import { modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
 import { Toon } from './materials'
+import { BRAND } from './palette'
 import { ModelBoundary, useModelClone } from './Model'
 
 interface AikaProps {
@@ -105,10 +106,10 @@ function AikaPlaceholder({ motion }: AikaProps) {
           <capsuleGeometry args={[0.3, 0.45, 6, 12]} />
           <Toon color="#f06c9b" />
         </mesh>
-        {/* Cachecol / detalhe */}
+        {/* Cachecol na cor da marca */}
         <mesh position={[0, 1.33, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.22, 0.07, 8, 16]} />
-          <Toon color="#ffd166" />
+          <Toon color={BRAND.orange} />
         </mesh>
         {/* Braços */}
         <group ref={armL} position={[-0.38, 1.2, 0]}>
@@ -149,7 +150,7 @@ function AikaPlaceholder({ motion }: AikaProps) {
         {/* Presilha de destaque */}
         <mesh position={[0.22, 2.02, 0.12]}>
           <octahedronGeometry args={[0.08, 0]} />
-          <Toon color="#5ce1e6" emissive="#5ce1e6" emissiveIntensity={0.3} />
+          <Toon color={BRAND.neon} emissive={BRAND.neon} emissiveIntensity={0.3} />
         </mesh>
         {/* Olhos (frente = +Z) */}
         <mesh position={[-0.12, 1.72, 0.33]}>

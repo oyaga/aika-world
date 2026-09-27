@@ -7,7 +7,8 @@ import { Joystick } from './ui/Joystick'
 import { Loading } from './ui/Loading'
 import { Panel } from './ui/Panel'
 import { SimpleView } from './ui/SimpleView'
-import { layoutHouses, resolveLandmarks, type Poi } from './world/layout'
+import { STORY } from './content'
+import { layoutHouses, layoutStory, resolveLandmarks, type Poi } from './world/layout'
 import { Scene } from './world/Scene'
 
 export function App() {
@@ -25,11 +26,12 @@ export function App() {
 
   const markers = useStore((s) => s.markers)
   const landmarks = useMemo(() => resolveLandmarks(markers), [markers])
+  const story = useMemo(() => layoutStory(STORY, markers), [markers])
   const houses = useMemo(
-    () => layoutHouses(world, landmarks, markers?.vila ?? null),
-    [world, landmarks, markers],
+    () => layoutHouses(world, landmarks, story, markers?.vila ?? null),
+    [world, landmarks, story, markers],
   )
-  const pois = useMemo<Poi[]>(() => [...landmarks, ...houses], [landmarks, houses])
+  const pois = useMemo<Poi[]>(() => [...landmarks, ...story, ...houses], [landmarks, story, houses])
 
   return (
     <>
@@ -42,7 +44,13 @@ export function App() {
             gl={{ antialias: true, powerPreference: 'high-performance' }}
           >
             <Suspense fallback={null}>
-              <Scene landmarks={landmarks} houses={houses} pois={pois} onReady={onReady} />
+              <Scene
+                landmarks={landmarks}
+                story={story}
+                houses={houses}
+                pois={pois}
+                onReady={onReady}
+              />
             </Suspense>
           </Canvas>
         )}
@@ -51,7 +59,7 @@ export function App() {
       {!simpleView && (
         <>
           <header className="hud">
-            <h1 className="hud__title">Aika World</h1>
+            <h1 className="hud__title">Planeta do Felipe</h1>
             <p className="hud__help">
               <kbd>W</kbd>
               <kbd>A</kbd>

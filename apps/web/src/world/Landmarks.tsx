@@ -7,6 +7,7 @@ import { Label } from './Label'
 import type { LandmarkKind, LandmarkPoi } from './layout'
 import { Toon } from './materials'
 import { Model } from './Model'
+import { BRAND } from './palette'
 import { surfaceRadius } from './terrain'
 
 function Templo() {
@@ -34,7 +35,7 @@ function Templo() {
       </mesh>
       <mesh position={[0, 3.3, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
         <coneGeometry args={[2.3, 1.2, 4]} />
-        <Toon color="#d0605e" />
+        <Toon color={BRAND.orange} />
       </mesh>
     </group>
   )
@@ -78,7 +79,7 @@ function Torre() {
       </mesh>
       <mesh position={[0, 3.2, 0]} castShadow>
         <cylinderGeometry args={[0.12, 0.45, 5.4, 4]} />
-        <Toon color="#e05d5d" />
+        <Toon color={BRAND.orange} />
       </mesh>
       {[1.6, 2.8, 4].map((y) => (
         <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
