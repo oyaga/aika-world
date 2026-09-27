@@ -89,12 +89,12 @@ Todos com **~2 m de altura** na escala do mundo (o planeta é pequeno). A propor
 cabeças** (não chibi, não realista). Roupas largas, tênis grandes e mãos simples, com dedos em bloco
 ou luva.
 
-| Arquivo         | Quem                                                                                                                                                                                                                 |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aika.glb`      | **A Aika, a guia.** Manter o conceito aprovado no commit anterior (husky de moletom laranja, fone com LED neon, rabo animado), redesenhada no novo estilo. _Se o Felipe mudar o conceito, siga o que ele disser._    |
-| `visitante.glb` | **O viajante (o jogador).** Jovem neutro, bolsa-carteiro vinho com glifo "AIKA" (como em `messenger-rua-celular.png`), tênis grandes. **Material da roupa principal: `Roupa@tint`** (cada visitante recebe uma cor). |
-| `felipe.glb`    | **O Felipe, criador do mundo.** Cabelo espetado, camiseta escura com estampa laranja, bermuda, tênis. Parado na frente do templo.                                                                                    |
-| `npc.glb`       | **Atendente genérico** dos 6 serviços (usado 6×). Avental ou jaqueta de trabalho. **`Roupa@tint`** recebe a cor de cada serviço.                                                                                     |
+| Arquivo         | Quem                                                                                                                                                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aika.glb`      | **A Aika, a guia.** Manter o conceito aprovado no commit anterior (husky de moletom laranja, fone com LED neon, rabo animado), redesenhada no novo estilo. _Se o Felipe mudar o conceito, siga o que ele disser._ |
+| `visitante.glb` | **O viajante (o jogador).** Jovem neutro com **guarda-roupa trocável** (seção 4.1): o visitante escolhe cabelo, roupa, calçado e acessório numa tela de personagem, como em `messenger-personagem.png`.           |
+| `felipe.glb`    | **O Felipe, criador do mundo.** Cabelo espetado, camiseta escura com estampa laranja, bermuda, tênis. Parado na frente do templo.                                                                                 |
+| `npc.glb`       | **Atendente genérico** (reserva): usado só enquanto o atendente específico do serviço (seção 4.2) não existir. **`Roupa@tint`** recebe a cor do serviço.                                                          |
 
 **Animações** (nomes exatos; `Walk` e `Run` **no lugar**, sem sair da origem):
 
@@ -110,6 +110,60 @@ ou luva.
 
 ✅ = obrigatório, ⭐ = desejável. Personagens com **armature**. Rosto com olhos pintados na textura
 (estilo anime), com olho grande e brilho.
+
+### 4.1 Guarda-roupa do visitante (`visitante.glb`)
+
+O visitante monta o próprio personagem numa tela com setas ◀ ▶ por categoria (igual a
+`messenger-personagem.png`). Tudo vem **num único `visitante.glb`**: um corpo base e **todas as
+peças**, cada uma um mesh separado **preso ao mesmo esqueleto** (mesmas animações para todas). O
+código mostra uma peça por categoria e esconde as outras.
+
+**Nomes dos meshes** (exatos, em minúsculas): `<categoria>_<peça>`
+
+| Categoria | Prefixo   | Peças (mínimo; mais é bem-vindo)                                                                                                                       |
+| --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Corpo     | `corpo`   | **Um só mesh** `corpo` (cabeça, mãos, pescoço; pele). Olhos e boca pintados na textura                                                                 |
+| Cabelo    | `cabelo_` | `cabelo_curto`, `cabelo_bagunçado`, `cabelo_coque_duplo` (como a menina do Messenger), `cabelo_rabo`, `cabelo_raspado`, `cabelo_franja`                |
+| Cima      | `cima_`   | `cima_moletom` (com capuz), `cima_camiseta`, `cima_jaqueta_bomber`, `cima_suéter` (gola alta), `cima_regata`, `cima_kimono_urbano`                     |
+| Baixo     | `baixo_`  | `baixo_calca_larga`, `baixo_bermuda`, `baixo_saia`, `baixo_jogger`, `baixo_macacão` (se ocupar cima e baixo, veja abaixo)                              |
+| Pés       | `pes_`    | `pes_tenis_grosso` (mostarda, como no Messenger), `pes_tenis_cano_alto`, `pes_bota`, `pes_chinelo_meia`                                                |
+| Acessório | `acess_`  | `acess_nenhum` (mesh vazio ou ausente), `acess_bolsa_carteiro` (vinho, glifo "AIKA"), `acess_mochila`, `acess_bone`, `acess_fone_neon`, `acess_óculos` |
+
+- **Sem acentos nos nomes dos arquivos/meshes** na exportação final (`cabelo_baguncado`,
+  `cima_sueter`, `baixo_macacao`, `acess_oculos`). Os acentos acima são só para leitura.
+- **Cor escolhível:** a parte principal de cada peça de `cima_`, `baixo_` e `pes_` usa um material
+  com sufixo `@tint`, com nome por categoria: `Cima@tint`, `Baixo@tint`, `Pes@tint`. O visitante
+  escolhe a cor de cada categoria numa paleta. Detalhes fixos (costuras, logos, cadarços) em
+  materiais normais.
+- **Peça que cobre duas categorias** (ex.: macacão): nomeie pela principal (`baixo_macacao`) e
+  adicione a Custom Property `esconde = "cima"`. O código esconde a peça de cima quando ela estiver
+  vestida.
+- **Sem pele atravessando:** o `corpo` pode ter o tronco e as pernas simplificados ou apagados onde
+  as roupas sempre cobrem, para não vazar nas animações.
+- **Padrão ao abrir o site:** `cabelo_curto`, `cima_moletom`, `baixo_calca_larga`,
+  `pes_tenis_grosso`, `acess_bolsa_carteiro`. Deixe essa combinação visível no arquivo exportado.
+- **Limite:** o arquivo inteiro pode ter até **40.000 triângulos**, mas **qualquer combinação
+  vestida** deve ficar em **≤ 15.000**. Texturas: 1 atlas 2048 para todas as peças.
+- Render de vitrine: um "cartaz" com cada peça vestida, uma por uma.
+
+### 4.2 Atendentes dos serviços (um por serviço)
+
+Cada prédio da Praça tem o seu atendente, com roupa ligada ao serviço. Mesmas regras dos
+personagens (~5 cabeças, ~2 m, armature, `Idle` obrigatório; `Wave` e `Talk` desejáveis). A roupa
+principal usa `Roupa@tint`, que recebe a cor do prédio. Os nomes aparecem pelo código; não precisa
+escrever no modelo.
+
+| Arquivo                   | Nome no jogo | Serviço         | Visual                                                                                        |
+| ------------------------- | ------------ | --------------- | --------------------------------------------------------------------------------------------- |
+| `npc_ia-assistente.glb`   | Yuki         | IA Assistente   | Jaqueta tech com filete neon, fone com microfone, tablet com um robozinho holográfico na tela |
+| `npc_web-designer.glb`    | Hiro         | Web Designer    | Óculos redondos, camiseta com janelas de navegador em glifos, notebook debaixo do braço       |
+| `npc_servidores.glb`      | Takeshi      | Servidores      | Macacão técnico com crachá, cabos pendurados no ombro, lanterna na cabeça                     |
+| `npc_design-grafico.glb`  | Sakura       | Design Gráfico  | Avental sujo de tinta colorida, boina, pincel atrás da orelha                                 |
+| `npc_editor-de-video.glb` | Ren          | Editor de Vídeo | Colete de bolsos, boné virado para trás, câmera pendurada no pescoço, fone                    |
+| `npc_google.glb`          | Mei          | Google (SEO)    | Blazer sobre moletom, lupa grande na mão, crachá com gráfico subindo                          |
+
+`Idle` com uma ação típica do serviço: Yuki digita no tablet, Sakura pinta no ar, Ren enquadra
+com as mãos, Takeshi confere um cabo, Hiro rola o notebook, Mei olha pela lupa.
 
 ## 5. O que o site faz (e você NÃO faz)
 
@@ -167,17 +221,28 @@ O código vai aplicar o visual em tempo real. **Não faça no modelo:**
 
 ### 6.3 Personagens (seção 4)
 
-Ordem: **visitante → Aika → Felipe → NPC**.
+Ordem: **visitante (corpo + roupa padrão) → Aika → Felipe → atendentes (4.2) → peças extras do
+guarda-roupa (4.1)**.
 
-### 6.4 `servico.glb`: prédio de empresa da esquina (usado 6×)
+### 6.4 Prédios da Praça dos Serviços (um por serviço)
 
-- Prédio de 2 andares no estilo `messenger-esquina.jpg`:
-  - concreto com manchas e canos;
-  - toldo, letreiro grande com **glifos** e ar-condicionado na fachada;
-  - vitrine e porta na frente (−Y).
-- **Paredes principais: `Parede@tint`** (cor de cada serviço). O letreiro pode ter a moldura em
-  laranja marca. O nome do serviço aparece por cima, pelo código.
-- ~3 × 2,6 m de base, 3,5–4,5 m de altura.
+Seis prédios de 2 andares no estilo `messenger-esquina.jpg` (concreto manchado, canos, fios,
+ar-condicionado, toldo, letreiro grande com **glifos**), cada um com a **cara do seu serviço**.
+Frente (vitrine e porta) para −Y, ~3 × 2,6 m de base, 3,5–4,5 m de altura. Paredes principais em
+`Parede@tint` (recebem a cor do serviço), moldura do letreiro em laranja marca. **Deixe ~1,5 m
+livres na frente da porta**: o atendente fica ali.
+
+| Arquivo                       | Serviço         | Tema da fachada                                                                                                                     |
+| ----------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `servico_ia-assistente.glb`   | IA Assistente   | Loja futurista: antena parabólica no telhado, vitrine com tela holográfica de chat (emissiva ciano), robozinho acenando na vitrine  |
+| `servico_web-designer.glb`    | Web Designer    | Estúdio com vitrine de monitores (telas emissivas com layouts em glifos), letreiro em forma de janela de navegador com cursor       |
+| `servico_servidores.glb`      | Servidores      | Mini datacenter: racks visíveis pela janela com LEDs verdes/ciano (emissivos), ventiladores e muito ar-condicionado, porta de metal |
+| `servico_design-grafico.glb`  | Design Gráfico  | Ateliê: letreiro com paleta de pintor e pincel gigante, cartazes coloridos colados na parede, respingos de tinta na calçada         |
+| `servico_editor-de-video.glb` | Editor de Vídeo | Estúdio: letreiro em claquete, luz vermelha "no ar" (glifo) acesa, tripé com câmera e refletor na calçada                           |
+| `servico_google.glb`          | Google (SEO)    | Agência: lupa gigante no letreiro, cartazes de gráficos subindo, placa de "ranking" com estrelas                                    |
+
+- `servico.glb` (genérico) continua opcional, como reserva para um serviço novo que ainda não
+  tenha prédio próprio.
 
 ### 6.5 `correio.glb`
 
@@ -196,8 +261,12 @@ estrela. ~1,5 m.
   exceção: origem no centro da esfera.
 - **Frente** para **−Y** (vista Front, numpad 1). **Aplique as transformações** antes de exportar
   (Ctrl+A → All Transforms).
-- **Nomes de arquivo:** `aika`, `visitante`, `felipe`, `npc`, `planeta`, `templo`, `servico`,
-  `correio`, `casa` (+ opcionais `arvore`, `pedra`) `.glb`, em `apps/web/src/assets/models/`.
+- **Nomes de arquivo:** `aika`, `visitante`, `felipe`, `planeta`, `templo`, `correio`, `casa`,
+  `servico_<serviço>` e `npc_<serviço>` (os 6 da seção 4.2/6.4) + opcionais `servico`, `npc`,
+  `arvore`, `pedra` `.glb`, em `apps/web/src/assets/models/`. Os `<serviço>` são exatamente:
+  `ia-assistente`, `web-designer`, `servidores`, `design-grafico`, `editor-de-video`, `google`.
+- **Guarda-roupa:** meshes `corpo`, `cabelo_*`, `cima_*`, `baixo_*`, `pes_*`, `acess_*` dentro de
+  `visitante.glb`; materiais `Cima@tint`, `Baixo@tint`, `Pes@tint`.
 - **Sufixos de material:** `@unlit` = cor/emissivo puro, sem sombra (neon, lanternas, cachoeira).
   `@tint` = recebe a cor variável do código (`Roupa@tint`, `Parede@tint`).
 - **Objetos especiais dentro de `planeta.glb`:**
@@ -222,17 +291,18 @@ estrela. ~1,5 m.
 Os limites valem para desktop e celular. O que mais pesa no celular é **número de materiais e de
 texturas**, não triângulos.
 
-| Modelo                                       |   Triângulos | Texturas                                   | Materiais |
-| -------------------------------------------- | -----------: | ------------------------------------------ | --------: |
-| `aika`, `visitante`                          |       15.000 | 1 atlas 2048 (ou 1024)                     |       ≤ 6 |
-| `felipe`, `npc`                              |       12.000 | 1 atlas 1024                               |       ≤ 6 |
-| `templo`                                     |       25.000 | até 2 atlas 2048                           |      ≤ 10 |
-| `servico` (6×)                               |        8.000 | 1 atlas 1024                               |       ≤ 6 |
-| `casa` (N×)                                  |        4.000 | 1 atlas 1024                               |       ≤ 4 |
-| `correio`                                    |        2.500 | 512                                        |       ≤ 3 |
-| `planeta` (terreno + decoração + props)      |       80.000 | até 3 atlas 2048                           |      ≤ 16 |
-| **Total em cena** (com 6 prédios, ~20 casas) | **~300.000** | —                                          |         — |
-| **Tudo somado (arquivos)**                   |            — | **≤ 20 MB** com Draco + texturas JPEG/WebP |         — |
+| Modelo                                       |                Triângulos | Texturas                                   | Materiais |
+| -------------------------------------------- | ------------------------: | ------------------------------------------ | --------: |
+| `aika`                                       |                    15.000 | 1 atlas 2048 (ou 1024)                     |       ≤ 6 |
+| `visitante` (arquivo com todas as peças)     | 40.000 (vestido ≤ 15.000) | 1 atlas 2048                               |      ≤ 10 |
+| `felipe`, `npc_*` (cada)                     |                    12.000 | 1 atlas 1024                               |       ≤ 6 |
+| `templo`                                     |                    25.000 | até 2 atlas 2048                           |      ≤ 10 |
+| `servico_*` (cada, 6 prédios)                |                    10.000 | 1 atlas 1024                               |       ≤ 6 |
+| `casa` (N×)                                  |                     4.000 | 1 atlas 1024                               |       ≤ 4 |
+| `correio`                                    |                     2.500 | 512                                        |       ≤ 3 |
+| `planeta` (terreno + decoração + props)      |                    80.000 | até 3 atlas 2048                           |      ≤ 16 |
+| **Total em cena** (com 6 prédios, ~20 casas) |              **~300.000** | —                                          |         — |
+| **Tudo somado (arquivos)**                   |                         — | **≤ 25 MB** com Draco + texturas JPEG/WebP |         — |
 
 - **Texturas:** Base Color pintada (JPEG; PNG só se precisar de transparência). **Sem normal map,
   sem roughness/metallic** (o shader do site ignora). Um atlas por modelo sempre que possível.
@@ -272,4 +342,7 @@ texturas**, não triângulos.
 - [ ] Neon só em filetes (≤ 5% da área), nas duas cores da marca.
 - [ ] Glifos inventados nos letreiros, nenhum texto legível por engano.
 - [ ] Nomes, Empties, sufixos e animações conforme a seção 7.
-- [ ] `pnpm models:check` sem erros; total ≤ 20 MB.
+- [ ] Guarda-roupa: todas as peças presas ao mesmo esqueleto, sem pele atravessando em nenhuma
+      animação, e a combinação padrão visível no arquivo.
+- [ ] Cada prédio e cada atendente reconhecível pelo serviço só de olhar, sem ler o nome.
+- [ ] `pnpm models:check` sem erros; total ≤ 25 MB.

@@ -52,16 +52,23 @@ const toonCache = new Map<string, Material>()
  * - termina com `@tint`  → recebe a cor `tint` (ex.: parede da casa por linguagem).
  * Resultados são reaproveitados entre instâncias.
  */
-export function toToon(source: Material, tint?: string): Material {
-  const useTint = tint !== undefined && source.name.endsWith('@tint')
-  const key = `${source.uuid}|${useTint ? tint : ''}`
+/**
+ * Cor para materiais `@tint`: uma cor para todos, ou uma por nome de material
+ * (ex.: `{ 'Cima@tint': '#f00' }`); materiais fora do mapa mantêm a cor do Blender.
+ */
+export type Tint = string | Record<string, string>
+
+export function toToon(source: Material, tint?: Tint): Material {
+  const tintColor = typeof tint === 'string' ? tint : tint?.[source.name]
+  const useTint = tintColor !== undefined && source.name.endsWith('@tint')
+  const key = `${source.uuid}|${useTint ? tintColor : ''}`
   const cached = toonCache.get(key)
   if (cached) return cached
 
   const std = source as MeshStandardMaterial
   const common = {
     name: source.name,
-    color: useTint ? new Color(tint) : (std.color?.clone() ?? new Color('#ffffff')),
+    color: useTint ? new Color(tintColor) : (std.color?.clone() ?? new Color('#ffffff')),
     map: std.map ?? null,
     vertexColors: std.vertexColors,
     transparent: std.transparent,
@@ -83,7 +90,7 @@ export function toToon(source: Material, tint?: string): Material {
 }
 
 /** Aplica `toToon` em todos os meshes de `root` (in place) e devolve `root`. */
-export function toonify<T extends Object3D>(root: T, tint?: string): T {
+export function toonify<T extends Object3D>(root: T, tint?: Tint): T {
   root.traverse((obj) => {
     const mesh = obj as Mesh
     if (!mesh.isMesh) return

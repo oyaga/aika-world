@@ -15,6 +15,9 @@ export type ModelName =
   | 'casa'
   | 'arvore'
   | 'pedra'
+  /** Prédio e atendente específicos de um serviço (slug de SERVICES). */
+  | `servico_${string}`
+  | `npc_${string}`
 
 const found = import.meta.glob<string>('../assets/models/*.glb', {
   query: '?url',
@@ -30,6 +33,11 @@ for (const [path, url] of Object.entries(found)) {
 
 export function modelUrl(name: ModelName): string | undefined {
   return urls.get(name)
+}
+
+/** O primeiro modelo da lista que existir (ex.: específico → genérico); senão o último. */
+export function firstModel(...names: ModelName[]): ModelName {
+  return names.find((n) => urls.has(n)) ?? (names[names.length - 1] as ModelName)
 }
 
 /**

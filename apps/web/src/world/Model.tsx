@@ -3,7 +3,7 @@ import { useAnimations, useGLTF } from '@react-three/drei'
 import type { Object3D } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
-import { toonify } from './materials'
+import { type Tint, toonify } from './materials'
 
 interface BoundaryProps {
   fallback: ReactNode
@@ -28,9 +28,11 @@ export class ModelBoundary extends Component<BoundaryProps, { failed: boolean }>
 }
 
 /** Cópia independente da cena do glTF, já com materiais cartoon. */
-export function useModelClone(url: string, tint?: string): Object3D {
+export function useModelClone(url: string, tint?: Tint): Object3D {
   const { scene } = useGLTF(url, DRACO_PATH)
-  return useMemo(() => toonify(cloneSkinned(scene), tint), [scene, tint])
+  const tintKey = typeof tint === 'string' || tint === undefined ? tint : JSON.stringify(tint)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `tintKey` representa `tint`
+  return useMemo(() => toonify(cloneSkinned(scene), tint), [scene, tintKey])
 }
 
 type Scale = [number, number, number]

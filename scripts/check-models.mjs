@@ -14,19 +14,20 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 
 const DIR = resolve(process.argv[2] ?? 'apps/web/src/assets/models')
-const TOTAL_BUDGET = 20 * 1024 * 1024
+const TOTAL_BUDGET = 25 * 1024 * 1024
 const DRACO_HINT = 1024 * 1024
 
 /** Regras por arquivo (ver docs/arte.md). height = altura esperada em metros. */
 const RULES = {
   aika: { tris: 15000, materials: 6, texture: 2048, actions: ['Idle', 'Walk'], height: [1.2, 3] },
   visitante: {
-    tris: 15000,
-    materials: 6,
+    tris: 40000,
+    dressedTris: 15000,
+    materials: 10,
     texture: 2048,
     actions: ['Idle', 'Walk'],
-    tint: true,
     height: [1.2, 3],
+    wardrobe: true,
   },
   felipe: { tris: 12000, materials: 6, texture: 1024, height: [1.2, 3] },
   npc: { tris: 12000, materials: 6, texture: 1024, tint: true, height: [1.2, 3] },
@@ -38,6 +39,45 @@ const RULES = {
   pedra: { tris: 800, materials: 2, texture: 512 },
   planeta: { tris: 80000, materials: 16, texture: 2048, planet: true },
 }
+
+/** Serviços da Praça (slugs de SERVICES em apps/web/src/content.tsx). */
+const SERVICE_SLUGS = [
+  'ia-assistente',
+  'web-designer',
+  'servidores',
+  'design-grafico',
+  'editor-de-video',
+  'google',
+]
+const SERVICE_BUILDING = {
+  tris: 10000,
+  materials: 6,
+  texture: 1024,
+  tint: true,
+  height: [2.5, 5.5],
+}
+const SERVICE_NPC = { tris: 12000, materials: 6, texture: 1024, tint: true, height: [1.2, 3] }
+
+/** Regra de um arquivo: nome exato, ou servico_<slug> / npc_<slug>. */
+function ruleFor(name) {
+  if (RULES[name]) return RULES[name]
+  const m = /^(servico|npc)_(.+)$/.exec(name)
+  if (!m) return null
+  if (!SERVICE_SLUGS.includes(m[2])) {
+    warn(`serviço "${m[2]}" desconhecido (válidos: ${SERVICE_SLUGS.join(', ')})`)
+    return null
+  }
+  return m[1] === 'servico' ? SERVICE_BUILDING : SERVICE_NPC
+}
+
+const WARDROBE_SLOTS = ['cabelo', 'cima', 'baixo', 'pes', 'acess']
+const DEFAULT_OUTFIT = [
+  'cabelo_curto',
+  'cima_moletom',
+  'baixo_calca_larga',
+  'pes_tenis_grosso',
+  'acess_bolsa_carteiro',
+]
 
 const PLANET_EMPTIES = ['poi_templo', 'area_servicos', 'area_vila']
 
@@ -120,6 +160,7 @@ function analyze(gltf) {
     min: [Infinity, Infinity, Infinity],
     max: [-Infinity, -Infinity, -Infinity],
     names: [],
+    trisByNode: {},
   }
   const visit = (index, parent) => {
     const node = gltf.nodes[index]
@@ -132,7 +173,11 @@ function analyze(gltf) {
           prim.indices !== undefined
             ? gltf.accessors[prim.indices].count
             : gltf.accessors[prim.attributes.POSITION].count
-        if (mode === 4) out.tris += count / 3
+        if (mode === 4) {
+          out.tris += count / 3
+          const key = (node.name ?? '').toLowerCase()
+          out.trisByNode[key] = (out.trisByNode[key] ?? 0) + count / 3
+        }
         const pos = gltf.accessors[prim.attributes.POSITION]
         if (pos?.min && pos?.max) {
           for (const cx of [pos.min[0], pos.max[0]])
@@ -171,10 +216,10 @@ for (const file of files.sort()) {
   const size = statSync(path).size
   total += size
   console.log(`${file}  (${(size / 1024).toFixed(0)} KB)`)
-  const rule = RULES[name]
-  if (!rule)
+  const rule = ruleFor(name)
+  if (!rule && !/^(servico|npc)_/.test(name))
     warn(
-      `nome desconhecido: o site não vai usar este arquivo (nomes válidos: ${Object.keys(RULES).join(', ')})`,
+      `nome desconhecido: o site não vai usar este arquivo (nomes válidos: ${Object.keys(RULES).join(', ')}, servico_<serviço>, npc_<serviço>)`,
     )
 
   let gltf
@@ -235,6 +280,45 @@ for (const file of files.sort()) {
       else ok('ações opcionais Run, Jump e Swim')
     }
 
+    if (rule.wardrobe) {
+      const nodes = Object.keys(a.trisByNode)
+      const slotOf = (n) => WARDROBE_SLOTS.find((s) => n.startsWith(`${s}_`))
+      const pieces = Object.fromEntries(
+        WARDROBE_SLOTS.map((s) => [s, nodes.filter((n) => slotOf(n) === s)]),
+      )
+      const empty = WARDROBE_SLOTS.filter((s) => pieces[s].length === 0)
+      if (empty.length === WARDROBE_SLOTS.length) {
+        console.log(
+          '  · sem guarda-roupa (peças cabelo_/cima_/baixo_/pes_/acess_): personagem único',
+        )
+      } else {
+        for (const s of WARDROBE_SLOTS) {
+          if (pieces[s].length) ok(`${s}: ${pieces[s].join(', ')}`)
+          else if (s !== 'acess') warn(`guarda-roupa sem peças de "${s}"`)
+        }
+        const missingDefault = DEFAULT_OUTFIT.filter(
+          (p) => !nodes.includes(p) && pieces[slotOf(p)].length,
+        )
+        if (missingDefault.length)
+          warn(`faltam peças da combinação padrão: ${missingDefault.join(', ')}`)
+        const base = nodes.filter((n) => !slotOf(n)).reduce((t, n) => t + a.trisByNode[n], 0)
+        const dressed =
+          base +
+          WARDROBE_SLOTS.reduce((t, s) => {
+            const pick = DEFAULT_OUTFIT.find((p) => slotOf(p) === s)
+            return t + (a.trisByNode[pick] ?? a.trisByNode[pieces[s][0]] ?? 0)
+          }, 0)
+        if (dressed > rule.dressedTris)
+          warn(
+            `vestido com a combinação padrão: ${Math.round(dressed)} triângulos (limite ${rule.dressedTris})`,
+          )
+        else ok(`vestido com a combinação padrão: ${Math.round(dressed)} triângulos`)
+        const tints = (gltf.materials ?? []).map((m) => m.name).filter((n) => n?.endsWith('@tint'))
+        if (!tints.includes('Cima@tint'))
+          warn('falta o material "Cima@tint" (cor escolhida pelo visitante)')
+      }
+    }
+
     if (rule.tint) {
       const tinted = (gltf.materials ?? []).some((m) => m.name?.endsWith('@tint'))
       if (!tinted) warn('nenhum material termina com "@tint": a cor variável não vai aparecer')
@@ -273,7 +357,7 @@ for (const file of files.sort()) {
 }
 
 const mb = (total / 1024 / 1024).toFixed(2)
-if (total > TOTAL_BUDGET) err(`total ${mb} MB passa do limite de 20 MB`)
-else console.log(`Total: ${mb} MB de 20 MB`)
+if (total > TOTAL_BUDGET) err(`total ${mb} MB passa do limite de 25 MB`)
+else console.log(`Total: ${mb} MB de 25 MB`)
 console.log(`\n${errors} erro(s), ${warnings} aviso(s)`)
 process.exit(errors > 0 ? 1 : 0)

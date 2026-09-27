@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import type { Group } from 'three'
@@ -8,6 +8,8 @@ import { Toon } from './materials'
 import { ModelBoundary, useModelClone } from './Model'
 import type { MoveState } from './locomotion'
 import { BRAND } from './palette'
+import type { Tint } from './materials'
+import { applyOutfit, DEFAULT_OUTFIT, type Outfit } from './wardrobe'
 
 /** Objeto mutável com `speed` (0..1), lido a cada frame para a animação. */
 export interface Motion {
@@ -187,8 +189,17 @@ const OPTIONAL_ACTIONS = ['Idle', 'Walk', 'Run', 'Jump', 'Swim'] as const
  * opcionais (sem elas, usa `Walk` ou a pose parada). Misturadas pela
  * velocidade e pelo estado de movimento.
  */
-function AnimatedGlb({ url, motion, tint }: { url: string; motion: Motion; tint?: string }) {
+interface AnimatedGlbProps {
+  url: string
+  motion: Motion
+  tint?: Tint
+  /** Só no visitante: escolhe as peças do guarda-roupa. */
+  outfit?: Outfit
+}
+
+function AnimatedGlb({ url, motion, tint, outfit }: AnimatedGlbProps) {
   const root = useModelClone(url, tint)
+  useMemo(() => outfit && applyOutfit(root, outfit), [root, outfit])
   const { animations } = useGLTF(url, DRACO_PATH)
   const { actions, names } = useAnimations(animations, root)
   const reducedMotion = useStore((s) => s.reducedMotion)
@@ -228,18 +239,19 @@ interface CharacterProps {
   motion: Motion
   look: ChibiLook
   /** Cor para materiais `@tint` do .glb. */
-  tint?: string
+  tint?: Tint
+  outfit?: Outfit
 }
 
 /** Usa o .glb quando existir; senão (ou enquanto carrega) o chibi de primitivas. */
-function Character({ model, motion, look, tint }: CharacterProps) {
+function Character({ model, motion, look, tint, outfit }: CharacterProps) {
   const url = modelUrl(model)
   const placeholder = <Chibi motion={motion} look={look} />
   if (!url) return placeholder
   return (
     <ModelBoundary fallback={placeholder}>
       <Suspense fallback={placeholder}>
-        <AnimatedGlb url={url} motion={motion} tint={tint} />
+        <AnimatedGlb url={url} motion={motion} tint={tint} outfit={outfit} />
       </Suspense>
     </ModelBoundary>
   )
@@ -256,7 +268,8 @@ export function Visitor({ motion, color }: { motion: Motion; color: string }) {
     <Character
       model="visitante"
       motion={motion}
-      tint={color}
+      tint={{ 'Cima@tint': color, 'Roupa@tint': color }}
+      outfit={DEFAULT_OUTFIT}
       look={{
         outfit: color,
         scarf: '#fff3e6',

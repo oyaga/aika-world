@@ -16,4 +16,4 @@ a forma simples continua.
 | `arvore.glb`    | árvore espalhada (só sem `planeta.glb`)  |
 | `pedra.glb`     | pedra espalhada (só sem `planeta.glb`)   |
 
-Especificações completas em [`docs/arte.md`](../../../../../docs/arte.md).
+Especificações completas em [`docs/direcao-de-arte-v2.md`](../../../../../docs/direcao-de-arte-v2.md).

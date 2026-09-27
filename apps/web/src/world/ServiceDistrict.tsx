@@ -4,6 +4,7 @@ import { faceTowards } from '../lib/sphere'
 import { Label } from './Label'
 import type { ServicePoi } from './layout'
 import { Toon } from './materials'
+import { firstModel } from '../lib/models'
 import { Model } from './Model'
 import { Npc } from './Npc'
 import { BRAND } from './palette'
@@ -61,7 +62,7 @@ function ServiceSpot({ poi, index }: { poi: ServicePoi; index: number }) {
     <>
       <group position={position} quaternion={quaternion}>
         <Model
-          name="servico"
+          name={firstModel(`servico_${service.slug}`, 'servico')}
           tint={service.color}
           fallback={<ServiceBuilding color={service.color} height={height} />}
         />
@@ -71,7 +72,7 @@ function ServiceSpot({ poi, index }: { poi: ServicePoi; index: number }) {
         dir={poi.dir}
         lookAt={poi.center}
         name={service.npc.name}
-        model="npc"
+        model={firstModel(`npc_${service.slug}`, 'npc')}
         look={{ outfit: service.color, hair: '#2b2238', accent: BRAND.orange }}
       />
     </>
