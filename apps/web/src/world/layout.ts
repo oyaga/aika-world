@@ -1,19 +1,40 @@
-import type { Vector3 } from 'three'
+import { Vector3 } from 'three'
 import type { RepoHouse, WorldData } from '@aika-world/shared'
-import type { StoryMilestone } from '../content'
+import type { Service, StoryMilestone } from '../content'
 import type { Markers } from '../state/store'
-import { angleBetween, dirFromAngles, fibonacciSphere, PLANET_RADIUS, UP } from '../lib/sphere'
+import {
+  angleBetween,
+  dirFromAngles,
+  fibonacciSphere,
+  offsetDir,
+  PLANET_RADIUS,
+  tangentTowards,
+  UP,
+} from '../lib/sphere'
 
-export type LandmarkKind = 'templo' | 'oficina' | 'torre'
+export type LandmarkKind = 'templo' | 'torre'
 
 export interface LandmarkPoi {
   kind: 'landmark'
-  id: 'sobre' | 'servicos' | 'contato'
+  id: 'sobre' | 'contato'
   landmark: LandmarkKind
   label: string
   dir: Vector3
   /** Para onde o prédio olha (vem do Empty); null = de frente para o spawn. */
   forward?: Vector3 | null
+}
+
+export interface ServicePoi {
+  kind: 'service'
+  id: `servico:${string}`
+  service: Service
+  label: string
+  /** Posição do NPC (ponto de interação). */
+  dir: Vector3
+  /** Posição do prédio, atrás do NPC. */
+  buildingDir: Vector3
+  /** Centro da praça: prédio e NPC olham para ele. */
+  center: Vector3
 }
 
 export interface HousePoi {
@@ -34,7 +55,7 @@ export interface StoryPoi {
   dir: Vector3
 }
 
-export type Poi = LandmarkPoi | HousePoi | StoryPoi
+export type Poi = LandmarkPoi | ServicePoi | HousePoi | StoryPoi
 
 /** Raio (unidades de mundo, na superfície) para mostrar a dica de interação. */
 export const INTERACT_DISTANCE = 4
@@ -44,15 +65,8 @@ export const LANDMARKS: LandmarkPoi[] = [
     kind: 'landmark',
     id: 'sobre',
     landmark: 'templo',
-    label: 'Templo · Sobre',
+    label: 'Templo · Felipe',
     dir: dirFromAngles(28, 0),
-  },
-  {
-    kind: 'landmark',
-    id: 'servicos',
-    landmark: 'oficina',
-    label: 'Oficina · Serviços',
-    dir: dirFromAngles(34, 120),
   },
   {
     kind: 'landmark',
@@ -63,6 +77,25 @@ export const LANDMARKS: LandmarkPoi[] = [
   },
 ]
 
+/** Distância (m) do Felipe à frente do centro do templo, no referencial do templo (+Z). */
+export const FELIPE_OFFSET = 3.2
+
+/** Rumo "frente" do marco na superfície: o Empty girado ou, sem ele, o spawn. */
+export function landmarkForward(poi: LandmarkPoi): Vector3 {
+  return tangentTowards(poi.dir, poi.forward ?? UP)
+}
+
+/**
+ * Ponto de interação do marco. No templo é onde o Felipe fica, na frente;
+ * nos outros, o centro do prédio.
+ */
+export function poiAnchor(poi: Poi): Vector3 {
+  if (poi.kind === 'landmark' && poi.landmark === 'templo') {
+    return offsetDir(poi.dir, landmarkForward(poi), FELIPE_OFFSET)
+  }
+  return poi.dir
+}
+
 /** Marcos com as posições dos Empties `poi_*` do planeta, quando existirem. */
 export function resolveLandmarks(markers: Markers | null): LandmarkPoi[] {
   if (!markers) return LANDMARKS
@@ -72,15 +105,57 @@ export function resolveLandmarks(markers: Markers | null): LandmarkPoi[] {
   })
 }
 
-/** Direções reservadas (spawn + marcos) onde casas e props não devem ficar. */
-export function reservedDirs(landmarks: LandmarkPoi[], story: StoryPoi[] = []): Vector3[] {
-  return [UP.clone(), ...landmarks.map((l) => l.dir), ...story.map((s) => s.dir)]
+/** Centro padrão da Praça dos Serviços (sem o Empty `area_servicos`). */
+export const DEFAULT_SERVICES_CENTER = dirFromAngles(42, 120)
+const PLAZA_RADIUS = 7 // prédios
+const NPC_RADIUS = 4.2 // NPCs, entre o prédio e o centro
+
+/**
+ * Praça dos Serviços: prédios em ferradura ao redor de `center`, com a
+ * abertura virada para o spawn. Cada NPC fica na porta, olhando para o centro.
+ */
+export function layoutServices(services: Service[], center: Vector3): ServicePoi[] {
+  const north = tangentTowards(center, UP)
+  const east = new Vector3().crossVectors(north, center).normalize()
+  const n = services.length
+  return services.map((service, i) => {
+    const deg = n === 1 ? 180 : 60 + (i * 240) / (n - 1)
+    const theta = (deg * Math.PI) / 180
+    const heading = north
+      .clone()
+      .multiplyScalar(Math.cos(theta))
+      .add(east.clone().multiplyScalar(Math.sin(theta)))
+    return {
+      kind: 'service',
+      id: `servico:${service.slug}`,
+      service,
+      label: `${service.icon} ${service.name}`,
+      dir: offsetDir(center, heading, NPC_RADIUS),
+      buildingDir: offsetDir(center, heading, PLAZA_RADIUS),
+      center,
+    }
+  })
+}
+
+/** Direções reservadas (spawn, marcos, praça, placas) onde casas e props não devem ficar. */
+export function reservedDirs(
+  landmarks: LandmarkPoi[],
+  story: StoryPoi[] = [],
+  services: ServicePoi[] = [],
+): Vector3[] {
+  return [
+    UP.clone(),
+    ...landmarks.flatMap((l) => [l.dir, poiAnchor(l)]),
+    ...story.map((s) => s.dir),
+    ...services.flatMap((s) => [s.dir, s.buildingDir]),
+    ...(services[0] ? [services[0].center] : []),
+  ]
 }
 
 /** Trilha da história: anel em torno do planeta, abaixo dos marcos. */
-export const TRAIL_POLAR_DEG = 62
+export const TRAIL_POLAR_DEG = 72
 const TRAIL_POLAR = (TRAIL_POLAR_DEG * Math.PI) / 180
-const TRAIL_START_AZIMUTH = 60 // entre o Templo e a Oficina
+const TRAIL_START_AZIMUTH = 60 // entre o Templo e a Praça dos Serviços
 const TRAIL_STEP_DEG = 36 // distância angular entre placas
 
 /** Pedras do caminho, a cada ~2 m, dando a volta inteira. */
@@ -154,11 +229,12 @@ export function layoutHouses(
   world: WorldData | null,
   landmarks: LandmarkPoi[],
   story: StoryPoi[],
+  services: ServicePoi[],
   vila: Markers['vila'] = null,
 ): HousePoi[] {
   const houses = world?.houses ?? []
   if (houses.length === 0) return []
-  const reserved = reservedDirs(landmarks, story)
+  const reserved = reservedDirs(landmarks, story, services)
   if (vila) return layoutVillage(houses, reserved, vila)
   const minAngle = 0.42 // ~24°
   let count = houses.length + reserved.length * 2
@@ -205,6 +281,7 @@ export function houseHeight(house: RepoHouse, now = Date.now()): number {
 }
 
 export function poiTitle(poi: Poi): string {
+  if (poi.kind === 'service') return `${poi.service.npc.name} · ${poi.label}`
   if (poi.kind === 'landmark' || poi.kind === 'story') return poi.label
   return poi.house.secret ? 'Projeto secreto 🔒' : poi.house.name
 }

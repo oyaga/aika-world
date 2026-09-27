@@ -7,8 +7,15 @@ import { Joystick } from './ui/Joystick'
 import { Loading } from './ui/Loading'
 import { Panel } from './ui/Panel'
 import { SimpleView } from './ui/SimpleView'
-import { STORY } from './content'
-import { layoutHouses, layoutStory, resolveLandmarks, type Poi } from './world/layout'
+import { SERVICES, STORY } from './content'
+import {
+  DEFAULT_SERVICES_CENTER,
+  layoutHouses,
+  layoutServices,
+  layoutStory,
+  resolveLandmarks,
+  type Poi,
+} from './world/layout'
 import { Scene } from './world/Scene'
 
 export function App() {
@@ -27,11 +34,18 @@ export function App() {
   const markers = useStore((s) => s.markers)
   const landmarks = useMemo(() => resolveLandmarks(markers), [markers])
   const story = useMemo(() => layoutStory(STORY, markers), [markers])
-  const houses = useMemo(
-    () => layoutHouses(world, landmarks, story, markers?.vila ?? null),
-    [world, landmarks, story, markers],
+  const services = useMemo(
+    () => layoutServices(SERVICES, markers?.servicos ?? DEFAULT_SERVICES_CENTER),
+    [markers],
   )
-  const pois = useMemo<Poi[]>(() => [...landmarks, ...story, ...houses], [landmarks, story, houses])
+  const houses = useMemo(
+    () => layoutHouses(world, landmarks, story, services, markers?.vila ?? null),
+    [world, landmarks, story, services, markers],
+  )
+  const pois = useMemo<Poi[]>(
+    () => [...landmarks, ...services, ...story, ...houses],
+    [landmarks, services, story, houses],
+  )
 
   return (
     <>
@@ -47,6 +61,7 @@ export function App() {
               <Scene
                 landmarks={landmarks}
                 story={story}
+                services={services}
                 houses={houses}
                 pois={pois}
                 onReady={onReady}

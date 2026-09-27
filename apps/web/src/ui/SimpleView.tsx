@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { SECTIONS, STORY } from '../content'
 import { useStore } from '../state/store'
-import { LANDMARKS, type HousePoi } from '../world/layout'
+import type { HousePoi } from '../world/layout'
 import { RepoDetails } from './RepoDetails'
 
 /** Versão 2D acessível com todas as seções e repositórios. */
@@ -22,10 +22,10 @@ export function SimpleView({ houses }: { houses: HousePoi[] }) {
             Voltar ao planeta 3D
           </button>
         </p>
-        {LANDMARKS.map((l) => (
-          <section key={l.id} aria-labelledby={`s-${l.id}`}>
-            <h2 id={`s-${l.id}`}>{SECTIONS[l.id].title}</h2>
-            {SECTIONS[l.id].body}
+        {(Object.keys(SECTIONS) as (keyof typeof SECTIONS)[]).map((id) => (
+          <section key={id} aria-labelledby={`s-${id}`}>
+            <h2 id={`s-${id}`}>{SECTIONS[id].title}</h2>
+            {SECTIONS[id].body}
           </section>
         ))}
         <section aria-labelledby="s-historia">

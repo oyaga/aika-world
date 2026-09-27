@@ -16,16 +16,17 @@ import { Toon } from './materials'
 import { ModelBoundary, useModelClone } from './Model'
 import { setTerrain } from './terrain'
 
-const LANDMARK_KINDS: LandmarkKind[] = ['templo', 'oficina', 'torre']
+const LANDMARK_KINDS: LandmarkKind[] = ['templo', 'torre']
 const DEFAULT_VILA_RADIUS = 12 // metros
 
 /**
  * Planeta: `planeta.glb` quando existir, senão a esfera procedural.
  * Convenções de nomes no Blender (ver docs/arte.md):
  * - `bloqueio_*`  → mesh invisível onde não se anda;
- * - `poi_templo`, `poi_oficina`, `poi_torre` → Empty com a posição do marco
+ * - `poi_templo`, `poi_torre` → Empty com a posição do marco
  *   (a frente do Empty, −Y no Blender, é para onde o prédio olha);
  * - `area_vila`   → Empty no centro da vila das casas (propriedade `raio` em metros);
+ * - `area_servicos` → Empty no centro da Praça dos Serviços;
  * - `historia_1`, `historia_2`… → Empties com a posição das placas da história.
  */
 export function Planet() {
@@ -44,7 +45,7 @@ const tmpPos = new Vector3()
 const tmpQuat = new Quaternion()
 
 function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blockers: Mesh[] } {
-  const markers: Markers = { landmarks: {}, vila: null, story: [] }
+  const markers: Markers = { landmarks: {}, vila: null, servicos: null, story: [] }
   const ground: Mesh[] = []
   const blockers: Mesh[] = []
   root.updateMatrixWorld(true)
@@ -74,6 +75,8 @@ function readMarkers(root: Object3D): { markers: Markers; ground: Mesh[]; blocke
     } else if (/^historia_\d+$/.test(name)) {
       const n = Number(name.slice('historia_'.length))
       if (n >= 1) markers.story[n - 1] = dir
+    } else if (name === 'area_servicos') {
+      markers.servicos = dir
     } else if (name === 'area_vila') {
       const raio = Number((obj.userData as { raio?: unknown }).raio)
       markers.vila = { dir, radius: raio > 0 ? raio : DEFAULT_VILA_RADIUS }

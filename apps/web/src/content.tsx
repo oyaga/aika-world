@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import type { LandmarkPoi } from './world/layout'
 
 /**
  * Conteúdo do planeta. Quem fala é a Aika, a agente criada pelo Felipe:
@@ -22,46 +21,76 @@ export const CONTACT = {
   site: 'https://aikanakamura.com',
 }
 
-interface Service {
+export interface Service {
+  slug: string
+  icon: string
   name: string
   text: string
   points: string[]
   idealFor: string
+  /** Cor do prédio e da roupa do NPC. */
+  color: string
+  /** NPC na porta do prédio, que explica o serviço. */
+  npc: { name: string; role: string }
 }
 
 export const SERVICES: Service[] = [
   {
+    slug: 'ia-assistente',
+    icon: '🤖',
     name: 'IA Assistente',
+    color: '#7b61ff',
+    npc: { name: 'Yuki', role: 'especialista em assistentes de IA' },
     text: 'Assistente digital personalizado para a sua empresa. Automatize o atendimento ao cliente e otimize tarefas diárias de forma inteligente e eficiente.',
     points: ['Automatização', 'Atendimento 24h', 'Otimização'],
     idealFor: 'Empresas que buscam automatização',
   },
   {
+    slug: 'web-designer',
+    icon: '💻',
     name: 'Web Designer',
+    color: '#2f9bff',
+    npc: { name: 'Hiro', role: 'web designer' },
     text: 'Sites modernos, responsivos e otimizados para atrair e converter seus clientes.',
     points: ['Design responsivo', 'Foco em conversão', 'Alta performance'],
     idealFor: 'Empresas que precisam de presença online',
   },
   {
+    slug: 'servidores',
+    icon: '🗄️',
     name: 'Servidores',
+    color: '#3fb57a',
+    npc: { name: 'Takeshi', role: 'cuidador dos servidores' },
     text: 'Máxima velocidade (servidores NVMe) e segurança (SSL e firewall), com gestão técnica completa. Você foca no seu negócio, eu cuido do servidor.',
     points: ['Servidores NVMe', 'SSL e firewall', 'Gestão completa'],
     idealFor: 'Empresas que precisam de infraestrutura confiável',
   },
   {
+    slug: 'design-grafico',
+    icon: '🎨',
     name: 'Design Gráfico',
+    color: '#ff6fa8',
+    npc: { name: 'Sakura', role: 'designer gráfica' },
     text: 'Logotipos, identidade visual completa (cores, tipografia) e materiais de divulgação que deixam sua marca memorável e profissional.',
     points: ['Branding', 'Identidade visual', 'Materiais de divulgação'],
     idealFor: 'Empresas que buscam uma identidade visual forte',
   },
   {
+    slug: 'editor-de-video',
+    icon: '🎬',
     name: 'Editor de Vídeo',
+    color: '#ffb020',
+    npc: { name: 'Ren', role: 'editor de vídeo' },
     text: 'Vídeos com ritmo, trilha sonora licenciada e motion graphics que prendem a atenção.',
     points: ['Engajamento', 'Motion graphics', 'Trilha sonora licenciada'],
     idealFor: 'Criadores de conteúdo e empresas que querem vídeos profissionais',
   },
   {
+    slug: 'google',
+    icon: '🔎',
     name: 'Google',
+    color: '#e8453c',
+    npc: { name: 'Mei', role: 'especialista em SEO' },
     text: 'Estratégias de SEO on-page e otimização técnica para dominar o tráfego orgânico e superar a concorrência.',
     points: ['SEO on-page', 'Otimização técnica', 'Tráfego orgânico'],
     idealFor: 'Empresas que buscam visibilidade no Google',
@@ -93,7 +122,8 @@ export const STORY: StoryMilestone[] = [
   },
 ]
 
-export const SECTIONS: Record<LandmarkPoi['id'], SectionContent> = {
+/** Seções para a versão simples (2D), na ordem em que aparecem. */
+export const SECTIONS: Record<'sobre' | 'servicos' | 'contato', SectionContent> = {
   sobre: {
     title: 'Sobre',
     body: (
@@ -120,11 +150,13 @@ export const SECTIONS: Record<LandmarkPoi['id'], SectionContent> = {
     title: 'Serviços',
     body: (
       <>
-        <p>Na oficina a gente constrói de tudo. Veja o que podemos fazer por você:</p>
+        <p>Na Praça dos Serviços, cada prédio é um serviço. Veja o que podemos fazer por você:</p>
         <ul className="services">
           {SERVICES.map((s) => (
             <li key={s.name}>
-              <h3>{s.name}</h3>
+              <h3>
+                {s.icon} {s.name}
+              </h3>
               <p>{s.text}</p>
               <p className="services__points">{s.points.join(' · ')}</p>
               <p className="services__ideal">

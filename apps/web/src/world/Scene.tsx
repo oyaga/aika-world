@@ -11,16 +11,19 @@ import {
   type HousePoi,
   type LandmarkPoi,
   type Poi,
+  type ServicePoi,
   type StoryPoi,
 } from './layout'
 import { Planet } from './Planet'
 import { Player } from './Player'
 import { Props } from './Props'
+import { ServiceDistrict } from './ServiceDistrict'
 import { Trail } from './Trail'
 
 interface SceneProps {
   landmarks: LandmarkPoi[]
   story: StoryPoi[]
+  services: ServicePoi[]
   houses: HousePoi[]
   pois: Poi[]
   onReady: () => void
@@ -28,11 +31,15 @@ interface SceneProps {
 
 const hasPlanetModel = modelUrl('planeta') !== undefined
 
-export function Scene({ landmarks, story, houses, pois, onReady }: SceneProps) {
+export function Scene({ landmarks, story, services, houses, pois, onReady }: SceneProps) {
   const reducedMotion = useStore((s) => s.reducedMotion)
   const avoid = useMemo(
-    () => [...reservedDirs(landmarks, story), ...trailDirs(), ...houses.map((h) => h.dir)],
-    [landmarks, story, houses],
+    () => [
+      ...reservedDirs(landmarks, story, services),
+      ...trailDirs(),
+      ...houses.map((h) => h.dir),
+    ],
+    [landmarks, story, services, houses],
   )
 
   useEffect(() => {
@@ -50,6 +57,7 @@ export function Scene({ landmarks, story, houses, pois, onReady }: SceneProps) {
       <Planet />
       {!hasPlanetModel && <Props avoid={avoid} />}
       <Landmarks landmarks={landmarks} />
+      <ServiceDistrict services={services} />
       <Trail story={story} showPath={!hasPlanetModel} />
       <Houses houses={houses} />
       <Player pois={pois} />

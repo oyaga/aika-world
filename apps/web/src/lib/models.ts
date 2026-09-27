@@ -4,7 +4,16 @@
  * O Vite gera a URL com hash, então o cache é invalidado a cada nova versão.
  */
 export type ModelName =
-  'aika' | 'planeta' | 'templo' | 'oficina' | 'torre' | 'casa' | 'arvore' | 'pedra'
+  | 'aika'
+  | 'felipe'
+  | 'npc'
+  | 'planeta'
+  | 'templo'
+  | 'torre'
+  | 'servico'
+  | 'casa'
+  | 'arvore'
+  | 'pedra'
 
 const found = import.meta.glob<string>('../assets/models/*.glb', {
   query: '?url',

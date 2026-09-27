@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { type Group, Quaternion, Vector3 } from 'three'
 import { angleBetween, PLANET_RADIUS, positionFromOrientation, turn, UP, walk } from '../lib/sphere'
@@ -6,7 +6,7 @@ import { readAxes } from '../state/input'
 import { playerState } from '../state/player'
 import { useStore } from '../state/store'
 import { Aika } from './Aika'
-import { INTERACT_DISTANCE, type Poi } from './layout'
+import { INTERACT_DISTANCE, type Poi, poiAnchor } from './layout'
 import { isBlocked, surfaceRadius } from './terrain'
 
 const WALK_SPEED = 6 // unidades/s
@@ -23,6 +23,7 @@ const upDir = new Vector3()
  */
 export function Player({ pois }: { pois: Poi[] }) {
   const group = useRef<Group>(null)
+  const anchors = useMemo(() => pois.map(poiAnchor), [pois])
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1)
@@ -58,9 +59,10 @@ export function Player({ pois }: { pois: Poi[] }) {
     // Proximidade com pontos de interesse.
     let nearest: Poi | null = null
     let best = INTERACT_DISTANCE
-    for (const poi of pois) {
+    for (let i = 0; i < pois.length; i++) {
+      const poi = pois[i] as Poi
       // Distância pela superfície, independente da altura do terreno.
-      const d = angleBetween(poi.dir, upDir) * PLANET_RADIUS
+      const d = angleBetween(anchors[i] ?? poi.dir, upDir) * PLANET_RADIUS
       if (d < best) {
         best = d
         nearest = poi

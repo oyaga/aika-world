@@ -2,8 +2,10 @@
 
 O planeta de **Felipe Kenji "Nakamura"** em 3D: seus projetos, serviços e história, com a
 **Aika**, a agente de IA criada por ele, como guia. Cada casinha é um repositório do GitHub de
-[@oyaga](https://github.com/oyaga); os prédios contam quem está por trás deles (Sobre, Serviços e
-Contato) e a Trilha da história dá a volta no planeta com os marcos da vida dele. Inspirado em
+[@oyaga](https://github.com/oyaga). No templo japonês, o próprio Felipe conta quem ele é e como a
+Aika nasceu; na Praça dos Serviços, um NPC na porta de cada prédio explica o serviço; a torre de
+rádio tem os contatos e a Trilha da história dá a volta no planeta com os marcos da vida dele.
+Inspirado em
 [messenger.abeto.co](https://messenger.abeto.co/).
 
 ![Captura de tela do protótipo](docs/screenshot.png)
@@ -90,6 +92,10 @@ quatro casas secretas.
 - **Câmera**: terceira pessoa, atrás e acima no referencial local, suavizada com `lerp`/`slerp`.
 - **Casas**: distribuídas com uma esfera de Fibonacci; altura por `log(estrelas + 1)` + atividade
   recente; cor pela linguagem.
+- **NPCs e conversas**: `src/dialogues.ts` define as conversas como pequenos grafos (falas +
+  opções de resposta); a do Felipe é escrita à mão e a de cada serviço é gerada a partir de
+  `SERVICES` em `content.tsx`. A caixa de diálogo digita as falas, aceita E/Espaço/Enter para
+  avançar e 1–9 para escolher. Os NPCs se viram para a Aika quando ela chega perto.
 - **Árvores e pedras**: posicionamento determinístico (RNG com semente) e `InstancedMesh`.
 - **Modelos 3D**: cada `.glb` em `apps/web/src/assets/models/` substitui a forma simples
   correspondente (com fallback se faltar ou falhar) e ganha materiais cartoon. Com `planeta.glb`,

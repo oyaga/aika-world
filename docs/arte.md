@@ -12,8 +12,10 @@ ou falhar, a forma simples continua aparecendo. Os `.blend` podem ficar em `art/
 | ------------- | --------------------------------------------------- |
 | `aika.glb`    | personagem, com as ações `Idle` e `Walk`            |
 | `planeta.glb` | terreno + decoração fixa + Empties de posição       |
-| `templo.glb`  | Templo · Sobre                                      |
-| `oficina.glb` | Oficina · Serviços                                  |
+| `templo.glb`  | templo japonês · Sobre (com torii e lanternas)      |
+| `felipe.glb`  | NPC do Felipe, na frente do templo                  |
+| `servico.glb` | prédio de empresa da Praça dos Serviços (6 cópias)  |
+| `npc.glb`     | NPC genérico na porta de cada serviço (6 cópias)    |
 | `torre.glb`   | Torre de rádio · Contato                            |
 | `casa.glb`    | casa base dos repositórios (cor e altura variam)    |
 | `arvore.glb`  | árvore espalhada pelo código (só sem `planeta.glb`) |
@@ -80,28 +82,51 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 - Comece com uma **Icosphere** (subdivisões 4 ou 5), origem no centro do planeta em (0, 0, 0).
 - Relevo é bem-vindo: morros suaves, lago afundado, caminho. A Aika segue a altura do terreno.
+  Evite paredes verticais onde ela anda.
 - **Trilha da história:** modele um caminho que dá a volta inteira no planeta. Ao longo dele ficam
   as placas com os marcos da vida do Felipe, posicionadas pelos Empties `historia_N`. Sem os
-  Empties, o código coloca as placas num anel a cerca de 62° do polo norte.
-  Evite paredes verticais onde ela anda.
+  Empties, o código coloca as placas num anel a cerca de 76° do polo norte.
 - Mantenha a superfície andável entre **19 e 21 m** do centro.
 - A decoração fixa (árvores, pedras, cercas) pode ser modelada direto no planeta. Com
   `planeta.glb`, o código não espalha as árvores e pedras de primitivas.
 
 ### Nomes especiais (objetos dentro do `planeta.glb`)
 
-| Nome                                     | Tipo  | Efeito                                                                                             |
-| ---------------------------------------- | ----- | -------------------------------------------------------------------------------------------------- |
-| `bloqueio_*` (ex.: `bloqueio_lago`)      | Mesh  | Barreira invisível: a Aika não entra na área que ele cobre visto de cima.                          |
-| `poi_templo`, `poi_oficina`, `poi_torre` | Empty | Posição do marco. Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
-| `area_vila`                              | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).   |
-| `historia_1`, `historia_2`, …            | Empty | Posição das placas da Trilha da história, na ordem dos marcos.                                     |
+| Nome                                | Tipo  | Efeito                                                                                             |
+| ----------------------------------- | ----- | -------------------------------------------------------------------------------------------------- |
+| `bloqueio_*` (ex.: `bloqueio_lago`) | Mesh  | Barreira invisível: a Aika não entra na área que ele cobre visto de cima.                          |
+| `poi_templo`, `poi_torre`           | Empty | Posição do marco. Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
+| `area_servicos`                     | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).         |
+| `area_vila`                         | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).   |
+| `historia_1`, `historia_2`, …       | Empty | Posição das placas da Trilha da história, na ordem dos marcos.                                     |
 
 - O **spawn** da Aika é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
 - Para a propriedade `raio`: selecione o Empty → Object Properties → Custom Properties → Add, e
   marque **Include → Custom Properties** na exportação.
-- Os prédios e as casas são posicionados pelo código em cima do terreno. Não modele o templo,
-  a oficina e a torre dentro do planeta: use os Empties.
+- Os prédios, NPCs e casas são posicionados pelo código em cima do terreno. Não modele o templo,
+  os prédios de serviço e a torre dentro do planeta: use os Empties. Deixe uma praça plana de
+  cerca de 18 m de diâmetro em volta do `area_servicos`.
+
+## Templo japonês
+
+- Base de pedra, pilares, paredes shoji e telhado em dois níveis; **torii** na frente (a cerca de
+  4,8 m do centro, em −Y) e duas lanternas de pedra. Pilares e torii no laranja da marca.
+- Deixe livre a faixa entre o templo e o torii: o Felipe fica ali, a 3,2 m do centro.
+
+## NPCs (Felipe e atendentes)
+
+- Mesma escala e orientação da Aika (cerca de 2 m, frente em −Y, pés em Z = 0).
+- `felipe.glb`: o Felipe, roupa escura com detalhes laranja. Ele se vira para a Aika quando ela
+  chega perto (o código gira o modelo inteiro).
+- `npc.glb`: um atendente genérico usado nos 6 serviços. A roupa usa um material `@tint`, que
+  recebe a cor de cada prédio.
+- Ação `Idle` opcional (ainda não tocada pelo código; hoje o boneco só balança de leve).
+
+## Prédio de serviço
+
+- Um prédio de empresa de cerca de 3 × 2,6 m de base e 3 a 4 m de altura, fachada (porta e
+  letreiro) em −Y. As paredes usam `@tint` para receber a cor de cada serviço; o letreiro fica no
+  laranja da marca. O nome do serviço aparece como rótulo flutuante, não precisa estar no modelo.
 
 ## Casa base
 
