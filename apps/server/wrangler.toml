@@ -4,6 +4,13 @@ name = "aika-world"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
+# Domínio próprio (zona já na Cloudflare). O workers.dev fica desligado.
+workers_dev = false
+routes = [
+  { pattern = "aikanakamura.com", custom_domain = true },
+  { pattern = "www.aikanakamura.com", custom_domain = true },
+]
+
 [assets]
 directory = "../web/dist"
 binding = "ASSETS"
