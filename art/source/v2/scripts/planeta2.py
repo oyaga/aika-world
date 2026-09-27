@@ -143,7 +143,7 @@ for sx in (-1,1):
         w=B('mureta',(0,0,-0.3),(0.22,(STAIR_B-STAIR_A)/NS+0.03,0.45),PE,bev=0.03); place(w,n,face=POLE,h=top); DECO.append(w)
         if i%4==0:
             c=B('neon_mureta',(0,0,0.16),(0.23,0.02,0.012),CY); place(c,n,face=POLE,h=top); neon.append(c)
-join(steps,"laje_escadaria"); join(neon,"escadaria_neon")
+join(steps,"laje_escadaria"); join(neon,"escadaria_neon"); join(DECO,"escadaria_mureta")
 # ---- camadas de pedra no barranco ----
 random.seed(5); strata=[]
 for k in range(34):
@@ -192,61 +192,59 @@ PF=tangent(SERV,POLE); PR=PF.cross(SERV).normalized()
 def pp(right,fwd): return local(SERV,POLE,right,fwd)
 def heading_pt(deg,r): 
     th=math.radians(deg); return pp(math.sin(th)*r, math.cos(th)*r)
-# asfalto (centro + rua saindo pela abertura) -> chão
-bm=bmesh.new(); vs={}
-RES=0.9
-pts=[]
-for i in range(-11,12):
-    for j in range(-11,14):
-        x=i*RES; y=j*RES
-        inside=(x*x+y*y<3.7**2) or (abs(x)<1.7 and y>0 and y<11.5)
-        pts.append(((i,j),inside,x,y))
-grid={k:(ins,x,y) for k,ins,x,y in pts}
-def V(i,j):
-    if (i,j) not in vs:
-        _,x,y=grid[(i,j)]; n=pp(x,y); vs[(i,j)]=bm.verts.new(n*(R0+max(height(n),0)+0.03))
-    return vs[(i,j)]
-for (i,j),(ins,x,y) in grid.items():
-    if (i+1,j+1) in grid and all(grid[k][0] for k in ((i,j),(i+1,j),(i,j+1),(i+1,j+1))):
-        bm.faces.new((V(i,j),V(i+1,j),V(i+1,j+1),V(i,j+1)))
+# asfalto: disco sob toda a praça + rua saindo pela abertura -> chão
+STREET_HW=1.75; SW_IN=3.75; SW_OUT=9.6
+def surf(x,y,lift):
+    n=pp(x,y); return n*(R0+max(height(n),0)+lift)
+bm=bmesh.new()
+rings=[0.0,1.2,2.4,3.75,5.0,6.5,8.0,9.55]; NA=64; grid={}
+for ri,r in enumerate(rings):
+    for k in range(NA if r>0 else 1):
+        th=2*math.pi*k/NA
+        grid[(ri,k)]=bm.verts.new(surf(r*math.sin(th),r*math.cos(th),0.03))
+for ri in range(1,len(rings)):
+    for k in range(NA):
+        k2=(k+1)%NA
+        if ri==1: bm.faces.new((grid[(0,0)],grid[(1,k)],grid[(1,k2)]))
+        else: bm.faces.new((grid[(ri-1,k)],grid[(ri,k)],grid[(ri,k2)],grid[(ri-1,k2)]))
+ys=[8.6+i*0.6 for i in range(6)]; xs=[-STREET_HW,-0.6,0.6,STREET_HW]
+sv={(i,j):bm.verts.new(surf(x,y,0.031)) for i,x in enumerate(xs) for j,y in enumerate(ys)}
+for i in range(len(xs)-1):
+    for j in range(len(ys)-1): bm.faces.new((sv[(i,j)],sv[(i+1,j)],sv[(i+1,j+1)],sv[(i,j+1)]))
+bmesh.ops.recalc_face_normals(bm,faces=bm.faces)
 me=bpy.data.meshes.new("chao_asfalto"); bm.to_mesh(me); bm.free()
 asf=bpy.data.objects.new("chao_asfalto",me); bpy.context.scene.collection.objects.link(asf); setmat(asf,AS); link(asf)
-# calçada contínua (chão) com meio-fio branco nas bordas
-meio=[]
-bm=bmesh.new(); vs={}; RES=0.45; g2={}
-def in_walk(x,y):
-    r=math.hypot(x,y)
-    if r<3.75 or r>9.6: return False
-    if abs(x)<1.75 and y>0: return False
-    return True
-for i in range(-22,23):
-    for j in range(-22,23):
-        g2[(i,j)]=in_walk(i*RES,j*RES)
-def V2_(i,j):
-    if (i,j) not in vs:
-        n=pp(i*RES,j*RES); vs[(i,j)]=bm.verts.new(n*(R0+0.12+max(height(n)-0.12,0)*0+0.0+ (0.12 if False else 0)))
-    return vs[(i,j)]
-for (i,j),ins in g2.items():
-    if all(g2.get(k,False) for k in ((i,j),(i+1,j),(i,j+1),(i+1,j+1))):
-        bm.faces.new((V2_(i,j),V2_(i+1,j),V2_(i+1,j+1),V2_(i,j+1)))
+for f_ in asf.data.polygons:
+    if f_.normal.dot(f_.center.normalized())<0: f_.flip()
+# calçada: anel polar com a borda da rua reta (x = ±STREET_HW), meio-fio branco
+bm=bmesh.new(); SR=[SW_IN,4.3,5.2,6.2,7.2,8.2,9.0,SW_OUT]; NS_=72; vv={}
+for ri,r in enumerate(SR):
+    tmin=math.asin(min(1,STREET_HW/r))
+    for k in range(NS_+1):
+        th=tmin+(2*math.pi-2*tmin)*k/NS_
+        vv[(ri,k)]=bm.verts.new(surf(r*math.sin(th),r*math.cos(th),0.12))
+for ri in range(1,len(SR)):
+    for k in range(NS_): bm.faces.new((vv[(ri-1,k)],vv[(ri-1,k+1)],vv[(ri,k+1)],vv[(ri,k)]))
 bmesh.ops.recalc_face_normals(bm,faces=bm.faces)
+for f_ in bm.faces:
+    if f_.normal.dot(f_.calc_center_median().normalized())<0: f_.normal_flip()
 edges=[e for e in bm.edges if e.is_boundary]
 ret=bmesh.ops.extrude_edge_only(bm,edges=edges)
-nv=[v for v in ret['geom'] if isinstance(v,bmesh.types.BMVert)]
-for v in nv: v.co=v.co.normalized()*(v.co.length-0.32)
+for v in [g for g in ret['geom'] if isinstance(g,bmesh.types.BMVert)]: v.co=v.co.normalized()*(v.co.length-0.3)
 me=bpy.data.meshes.new("piso_calcada"); bm.to_mesh(me); bm.free()
 pc=bpy.data.objects.new("piso_calcada",me); bpy.context.scene.collection.objects.link(pc)
 pc.data.materials.append(CO); pc.data.materials.append(BR)
-for f in pc.data.polygons:
-    f.use_smooth=False
-    if abs(f.normal.normalized().dot(f.center.normalized()))<0.5: f.material_index=1
+for f_ in pc.data.polygons:
+    f_.use_smooth=False
+    if abs(f_.normal.normalized().dot(f_.center.normalized()))<0.5: f_.material_index=1
 link(pc)
+meio=[]
 pint=[]
-for k in range(6):   # faixa de pedestre
-    n=pp(-1.25+k*0.5,3.3); s=B('faixa',(0,0,0.035),(0.16,0.55,0.005),BR); place(s,n,face=SERV,h=0.0); pint.append(s)
-for fwd in (5.2,7.0,8.8,10.6):
-    s=B('linha',(0,0,0.035),(0.06,0.4,0.005),BR); place(s,pp(0,fwd),face=SERV,h=0.0); pint.append(s)
-s=B('parada',(0,0,0.035),(1.5,0.08,0.005),BR); place(s,pp(0,2.4),face=SERV,h=0.0); pint.append(s)
+for k in range(6):   # faixa de pedestre: listras paralelas à rua, atravessando-a
+    x=-1.35+k*0.54; s_=B('faixa',(0,0,0.036),(0.17,0.6,0.005),BR); place(s_,pp(x,4.7),face=PF,h=0.0); pint.append(s_)
+s_=B('parada',(0,0,0.036),(1.6,0.08,0.005),BR); place(s_,pp(0,5.75),face=PF,h=0.0); pint.append(s_)
+for fwd in (6.8,8.4,10.0,11.4):
+    s_=B('linha',(0,0,0.036),(0.06,0.4,0.005),BR); place(s_,pp(0,fwd),face=PF,h=0.0); pint.append(s_)
 props=pint+meio
 bu=prim('cyl','bueiro',loc=(0,0,0.04),m=ES,radius=0.38,depth=0.02,vertices=14); place(bu,pp(-1.2,-1.0),h=0.0); props.append(bu)
 bu2=prim('torus','bueiro_aro',loc=(0,0,0.04),m=CO,major_radius=0.38,minor_radius=0.03,major_segments=14,minor_segments=3); place(bu2,pp(-1.2,-1.0),h=0.0); props.append(bu2)
@@ -272,7 +270,7 @@ for zz in (4.72,4.45):
     props+=wire(poles[0],pp(-4.5,9.5),zz,4.6-(4.72-zz)); props+=wire(poles[1],pp(4.5,9.5),zz,4.6-(4.72-zz))
     props+=wire(poles[0],heading_pt(-70,7.4),zz,3.6); props+=wire(poles[1],heading_pt(70,7.4),zz,3.6)
 # placa triangular com glifo
-n=pp(2.2,2.6)
+n=heading_pt(40,4.35)
 for o in (prim('cyl','haste',loc=(0,0,1.1),m=CO,radius=0.035,depth=2.2,vertices=6),
           prim('cone','triangulo',loc=(0,0,2.2),rot=(math.pi/2,0,0),scale=(1,1,0.1),m=VI,radius1=0.42,radius2=0.0,depth=0.06,vertices=3),
           B('glifo_placa',(0,-0.035,2.17),(0.04,0.005,0.13),BR), B('glifo_placa2',(0,-0.035,2.12),(0.12,0.005,0.03),BR)):
@@ -297,7 +295,7 @@ for deg in (84,132,180,228,276):
               prim('ico','planta',loc=(0,0,0.75),scale=(1,1,0.9),m=FO,radius=0.42,subdivisions=1)):
         place(o,n,h=0.12); props.append(o)
 # banco
-n=pp(-2.6,2.0)
+n=heading_pt(-47,4.5)
 for o in (B('banco',(0,0,0.45),(0.7,0.2,0.04),MA), B('banco_pe',(-0.55,0,0.22),(0.05,0.18,0.22),CO), B('banco_pe',(0.55,0,0.22),(0.05,0.18,0.22),CO)):
     place(o,n,face=SERV,h=0.12); props.append(o)
 join(props,"praca_props")

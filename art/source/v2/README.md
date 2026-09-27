@@ -1,22 +1,21 @@
-# Arte v2: arquivos-fonte (blockout)
+# Arte v2: arquivos-fonte
 
-Fase 1 da [direção de arte v2](../../../docs/direcao-de-arte-v2.md): **formas sem textura** de
-`planeta`, `templo` e `visitante`, para validar escala e composição. Renders em
-[`docs/renders/`](../../../docs/renders/).
+Modelos da [direção de arte v2](../../../docs/direcao-de-arte-v2.md). Renders em [`docs/renders/`](../../../docs/renders/).
 
-| Arquivo | Conteúdo |
-| --- | --- |
-| `visitante.blend` | Corpo (`corpo`) + roupa padrão (`cabelo_curto`, `cima_moletom`, `baixo_calca_larga`, `pes_tenis_grosso`, `acess_bolsa_carteiro`), todas no mesmo esqueleto (com joelhos e cotovelos); ações Idle, Walk, Run, Jump, Swim, Wave |
-| `templo.blend` | Templo de 2 níveis, torii a 4,8 m, faixa livre a 3,2 m |
-| `planeta.blend` | Diorama r = 20 m: colina do templo com escadaria (`laje_escadaria`), barranco em camadas, cachoeira no lago fundo, mini-esquina na praça (`chao_asfalto`, `piso_calcada`), vila, trilha, Empties |
+- `*.blend`: um por modelo exportado em `apps/web/src/assets/models/`.
+- `tex/`: texturas pintadas (atlas por modelo + texturas repetíveis do terreno). Os `.blend` apontam
+  para `~/Documents/AikaWorld/v2/tex/`; se abrir em outra máquina, use *File → External Data → Find
+  Missing Files* nesta pasta.
+- `scripts/`: geram tudo do zero no Blender 5.1. Pasta de trabalho: `~/Documents/AikaWorld/v2/`, com os
+  módulos prefixados por `_` (`_helpers.py`, `_paint.py`...). `build.py` tem uma função por modelo
+  (`B_templo()`, `B_planeta()`, `B_visitante()`, `B_aika()`, `B_felipe()`, `B_npc(slug)`,
+  `B_predio(slug)`, `B_cc("correio"|"casa")`) que reconstrói, texturiza, exporta e renderiza a vitrine.
 
-## Scripts (`scripts/`)
-
-Geram tudo do zero no Blender 5.1. Pasta de trabalho: `~/Documents/AikaWorld/v2/` (os módulos lá
-têm `_` no começo do nome: `_helpers.py`, `_rig3.py`...). Ordem: `helpers` → `geo`/`rig3`/`anim3` →
-`visitante` | `templo2` | `planeta2`; `show` + `vitrine` fazem os renders.
-
-- `rig3.py`: peças com **pesos suaves** (cada sub-parte pesa entre 1 e 2 ossos por distância), para
-  as roupas do guarda-roupa não rasgarem nas animações.
-- `anim3.py`: ciclos no lugar (Walk 1 s, Run ~0,6 s), Idle de 4 s (respira, troca o peso, olha em
-  volta), Jump, Swim e Wave.
+## Como as texturas são feitas
+- `paint.py`: pintor procedural em numpy (manchas, pinceladas, rachaduras e costuras em traço de tinta,
+  veios de madeira, telhas, glifos pseudo-japoneses, telas, cartazes). Sem luz ou sombra assada.
+- `texmap.py`: um atlas por modelo; cada material vira uma célula e os UVs são projetados na célula
+  (`tile` repete por face, `fit` encaixa placas/letreiros inteiros). `@tint` recebe célula clara
+  multiplicada pela cor padrão; `@unlit` fica liso (ou com textura, nas telas).
+- `rig3.py`/`anim3.py`: esqueleto com joelhos e cotovelos, pesos suaves por peça, ciclos no lugar e
+  um solucionador de braço usado nas poses de Idle dos atendentes.

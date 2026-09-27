@@ -9,6 +9,8 @@ def clear():
         for d in list(coll): coll.remove(d)
     for c in list(bpy.data.collections): bpy.data.collections.remove(c)
     for l in list(bpy.data.libraries): bpy.data.libraries.remove(l)
+    for im in list(bpy.data.images):
+        if im.name not in ('Render Result','Viewer Node'): bpy.data.images.remove(im)
 
 def hex2rgba(h):
     h=h.lstrip('#'); c=[int(h[i:i+2],16)/255 for i in (0,2,4)]
@@ -63,7 +65,7 @@ def export(name, objs, anim=False, extras=False):
     kw=dict(filepath=path, export_format='GLB', use_selection=True, export_yup=True, export_apply=True,
             export_extras=extras, export_cameras=False, export_lights=False, export_animations=anim)
     if anim: kw.update(export_animation_mode='ACTIONS', export_force_sampling=True)
-    kw.update(export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=6)
+    kw.update(export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=6, export_image_format='AUTO')
     if anim: kw.update(export_skins=True)
     bpy.ops.export_scene.gltf(**kw)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(BASE, name+".blend"))

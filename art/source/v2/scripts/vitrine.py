@@ -17,3 +17,13 @@ def vit_shots(arm, specs, res=440, prefix="v"):
     return out
 def floor_disc(r=2.0,col="#9C9A8E"):
     bpy.ops.mesh.primitive_cylinder_add(radius=r,depth=0.1,location=(0,0,-0.05),vertices=32); g=bpy.context.active_object; g.name="_chao"; setmat(g,mat("_Chao",col)); return g
+
+def peek(path, q=70, maxw=560):
+    import base64
+    img=bpy.data.images.load(path)
+    w,h=img.size
+    if w>maxw: img.scale(maxw,int(h*maxw/w))
+    out=path[:-4]+"_peek.jpg"; img.filepath_raw=out; img.file_format='JPEG'
+    sc=bpy.context.scene; old=sc.render.image_settings.quality; sc.render.image_settings.quality=q
+    img.save(); sc.render.image_settings.quality=old; bpy.data.images.remove(img)
+    return base64.b64encode(open(out,'rb').read()).decode()
