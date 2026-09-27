@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useAnimations, useGLTF } from '@react-three/drei'
-import type { Group } from 'three'
+import { type AnimationAction, type Group, LoopOnce } from 'three'
 import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
 import { useStore } from '../state/store'
 import { Toon } from './materials'
@@ -9,7 +9,14 @@ import { ModelBoundary, useModelClone } from './Model'
 import type { MoveState } from './locomotion'
 import { BRAND } from './palette'
 import type { Tint } from './materials'
-import { applyOutfit, DEFAULT_OUTFIT, type Outfit } from './wardrobe'
+import type { Look } from '@aika-world/shared'
+import {
+  applyOutfit,
+  DEFAULT_OUTFIT,
+  type Outfit,
+  type WardrobeSlot,
+  wardrobeNames,
+} from './wardrobe'
 
 /** Objeto mutável com `speed` (0..1), lido a cada frame para a animação. */
 export interface Motion {
@@ -17,7 +24,24 @@ export interface Motion {
   speed: number
   /** No chão, no ar (pulo) ou nadando. Padrão: no chão. */
   state?: MoveState
+  /** Gesto único (ex.: `Wave` do emote 👋); tocado uma vez quando o `id` muda. */
+  gesture?: Gesture | null
 }
+
+export interface Gesture {
+  name: string
+  id: number
+}
+
+let gestureId = 0
+/** Pede um gesto (tocado uma vez) para o personagem que usa este `motion`. */
+export function playGesture(motion: Motion, name: string) {
+  motion.gesture = { name, id: ++gestureId }
+}
+
+const GESTURE_FADE = 0.2
+/** Duração do aceno nos bonecos de primitivas (sem .glb). */
+const PLACEHOLDER_WAVE = 1.4
 
 interface ChibiLook {
   outfit: string
@@ -67,8 +91,16 @@ function Chibi({ motion, look }: { motion: Motion; look: ChibiLook }) {
   const pose = useRef<Group>(null)
   const phase = useRef(0)
   const reducedMotion = useStore((s) => s.reducedMotion)
+  const wave = useRef({ id: 0, t: Infinity })
 
   useFrame((_, delta) => {
+    // Aceno (emote 👋): braço direito para cima, balançando.
+    const g = motion.gesture
+    if (g && g.id !== wave.current.id) wave.current = { id: g.id, t: 0 }
+    wave.current.t += delta
+    const waving = wave.current.t < PLACEHOLDER_WAVE && (motion.state ?? 'ground') === 'ground'
+    if (armR.current)
+      armR.current.rotation.z = waving ? 0.4 + Math.sin(wave.current.t * 14) * 0.35 : 0
     const s = motion.speed
     const state = motion.state ?? 'ground'
     const k = Math.min(1, delta * 12)
@@ -111,7 +143,7 @@ function Chibi({ motion, look }: { motion: Motion; look: ChibiLook }) {
     lerp(legL, swing)
     lerp(legR, -swing)
     lerp(armL, -swing * 0.8)
-    lerp(armR, swing * 0.8)
+    lerp(armR, waving ? -2.7 : swing * 0.8)
   })
 
   return (
@@ -195,11 +227,18 @@ interface AnimatedGlbProps {
   tint?: Tint
   /** Só no visitante: escolhe as peças do guarda-roupa. */
   outfit?: Outfit
+  /** Recebe as peças que existem no modelo (para a tela do guarda-roupa). */
+  onWardrobe?: (catalog: Record<WardrobeSlot, string[]>) => void
 }
 
-function AnimatedGlb({ url, motion, tint, outfit }: AnimatedGlbProps) {
+function AnimatedGlb({ url, motion, tint, outfit, onWardrobe }: AnimatedGlbProps) {
   const root = useModelClone(url, tint)
   useMemo(() => outfit && applyOutfit(root, outfit), [root, outfit])
+  useEffect(() => {
+    if (!onWardrobe) return
+    const catalog = wardrobeNames(root)
+    if (Object.values(catalog).some((pieces) => pieces.length > 0)) onWardrobe(catalog)
+  }, [root, onWardrobe])
   const { animations } = useGLTF(url, DRACO_PATH)
   const { actions, names } = useAnimations(animations, root)
   const reducedMotion = useStore((s) => s.reducedMotion)
@@ -215,9 +254,40 @@ function AnimatedGlb({ url, motion, tint, outfit }: AnimatedGlbProps) {
     return () => all.forEach((a) => a.stop())
   }, [actions, names, url])
 
-  useFrame(() => {
+  const gesture = useRef<{ id: number; action: AnimationAction | null; t: number }>({
+    id: 0,
+    action: null,
+    t: 0,
+  })
+
+  useFrame((_, delta) => {
     const state = motion.state ?? 'ground'
     const s = reducedMotion ? 0 : motion.speed
+
+    // Gesto único por cima do movimento (só no chão), com entrada e saída suaves.
+    const g = gesture.current
+    const requested = motion.gesture
+    if (requested && requested.id !== g.id) {
+      g.action?.stop()
+      const action = actions[requested.name] ?? null
+      action?.reset().setLoop(LoopOnce, 1).play()
+      if (action) action.clampWhenFinished = true
+      gesture.current = { id: requested.id, action, t: 0 }
+    }
+    let gw = 0
+    const active = gesture.current
+    if (active.action) {
+      active.t += delta
+      const duration = active.action.getClip().duration
+      if (active.t >= duration || state !== 'ground') {
+        active.action.stop()
+        active.action = null
+      } else {
+        gw = Math.min(1, active.t / GESTURE_FADE, (duration - active.t) / GESTURE_FADE)
+        active.action.setEffectiveWeight(gw)
+      }
+    }
+
     const w = { Idle: 0, Walk: 0, Run: 0, Jump: 0, Swim: 0 }
     if (state === 'air' && actions.Jump) w.Jump = 1
     else if (state === 'swim' && actions.Swim) w.Swim = 1
@@ -228,7 +298,7 @@ function AnimatedGlb({ url, motion, tint, outfit }: AnimatedGlbProps) {
       w.Run = running
       w.Idle = 1 - moving
     }
-    for (const name of OPTIONAL_ACTIONS) actions[name]?.setEffectiveWeight(w[name])
+    for (const name of OPTIONAL_ACTIONS) actions[name]?.setEffectiveWeight(w[name] * (1 - gw))
   })
 
   return <primitive object={root} />
@@ -241,17 +311,24 @@ interface CharacterProps {
   /** Cor para materiais `@tint` do .glb. */
   tint?: Tint
   outfit?: Outfit
+  onWardrobe?: (catalog: Record<WardrobeSlot, string[]>) => void
 }
 
 /** Usa o .glb quando existir; senão (ou enquanto carrega) o chibi de primitivas. */
-function Character({ model, motion, look, tint, outfit }: CharacterProps) {
+function Character({ model, motion, look, tint, outfit, onWardrobe }: CharacterProps) {
   const url = modelUrl(model)
   const placeholder = <Chibi motion={motion} look={look} />
   if (!url) return placeholder
   return (
     <ModelBoundary fallback={placeholder}>
       <Suspense fallback={placeholder}>
-        <AnimatedGlb url={url} motion={motion} tint={tint} outfit={outfit} />
+        <AnimatedGlb
+          url={url}
+          motion={motion}
+          tint={tint}
+          outfit={outfit}
+          onWardrobe={onWardrobe}
+        />
       </Suspense>
     </ModelBoundary>
   )
@@ -262,20 +339,39 @@ export function Aika({ motion }: { motion: Motion }) {
   return <Character model="aika" motion={motion} look={AIKA_LOOK} />
 }
 
-/** O visitante (`visitante.glb`), com a roupa na cor sorteada para esta visita. */
-export function Visitor({ motion, color }: { motion: Motion; color: string }) {
+interface VisitorProps {
+  motion: Motion
+  /** Cor de identidade (servidor/sorteio): vale para a parte de cima se não houver escolha. */
+  color: string
+  /** Peças e cores escolhidas no guarda-roupa. */
+  look?: Look
+  onWardrobe?: (catalog: Record<WardrobeSlot, string[]>) => void
+}
+
+/** O visitante (`visitante.glb`), com o visual escolhido no guarda-roupa. */
+export function Visitor({ motion, color, look, onWardrobe }: VisitorProps) {
+  const cima = look?.colors.cima ?? color
+  const baixo = look?.colors.baixo
+  const pes = look?.colors.pes
+  const tint = useMemo<Tint>(() => {
+    const map: Record<string, string> = { 'Cima@tint': cima, 'Roupa@tint': cima }
+    if (baixo) map['Baixo@tint'] = baixo
+    if (pes) map['Pes@tint'] = pes
+    return map
+  }, [cima, baixo, pes])
   return (
     <Character
       model="visitante"
       motion={motion}
-      tint={{ 'Cima@tint': color, 'Roupa@tint': color }}
-      outfit={DEFAULT_OUTFIT}
+      tint={tint}
+      outfit={look?.outfit ?? DEFAULT_OUTFIT}
+      onWardrobe={onWardrobe}
       look={{
-        outfit: color,
+        outfit: cima,
         scarf: '#fff3e6',
         hair: '#4a3426',
         skin: '#e9b98f',
-        legs: '#3a3346',
+        legs: baixo ?? '#3a3346',
         backpack: '#8a5a3b',
       }}
     />

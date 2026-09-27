@@ -13,7 +13,7 @@ import {
 import { angleBetween, faceTowards, PLANET_RADIUS } from '../lib/sphere'
 import { aikaState, playerState } from '../state/player'
 import { useStore } from '../state/store'
-import { Aika } from './Characters'
+import { Aika, playGesture } from './Characters'
 import type { Poi } from './layout'
 import { lakeNear } from './lakes'
 import { stepVertical, SWIM_SPEED, WALK_SPEED } from './locomotion'
@@ -25,6 +25,8 @@ const FOLLOW_OFFSET = new Vector3(1.4, 0, -1)
 const TELEPORT_GAP = 25 // m: se ficar muito para trás, reaparece ao lado
 /** A Aika pula um instantinho depois do visitante. */
 const JUMP_DELAY_MS = 180
+/** …e acena de volta um pouco depois do aceno dele. */
+const WAVE_BACK_MS = 450
 
 const target = new Vector3()
 const axis = new Vector3()
@@ -61,6 +63,13 @@ function followStep(dt: number) {
   visitorDir.copy(playerState.position).normalize()
   desired.copy(faceTowards(a.dir, moved > 0 ? target : visitorDir))
   a.orientation.slerp(desired, Math.min(1, dt * 8))
+
+  // Acena de volta quando o visitante acena.
+  const wave = playerState.gesture
+  if (wave?.name === 'Wave' && wave.id !== a.answeredWave) {
+    a.answeredWave = wave.id
+    window.setTimeout(() => playGesture(a, 'Wave'), WAVE_BACK_MS)
+  }
 
   // Imita o pulo do visitante, com um pequeno atraso.
   const jumpedAt = playerState.jumpedAt
@@ -103,7 +112,10 @@ function SpeechBubble() {
  */
 function useGuideSpeech(pois: Poi[]) {
   useEffect(() => {
-    const id = window.setTimeout(() => useStore.getState().aikaSay(AIKA_GREETING), 1500)
+    const id = window.setTimeout(() => {
+      useStore.getState().aikaSay(AIKA_GREETING)
+      playGesture(aikaState, 'Wave')
+    }, 1500)
     return () => window.clearTimeout(id)
   }, [])
 

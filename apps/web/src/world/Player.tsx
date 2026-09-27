@@ -27,13 +27,15 @@ const upDir = new Vector3()
 export function Player({ pois }: { pois: Poi[] }) {
   const group = useRef<Group>(null)
   const visitorColor = useStore((s) => s.visitorColor)
+  const look = useStore((s) => s.look)
+  const setWardrobe = useStore((s) => s.setWardrobe)
   const myId = useStore((s) => s.net.me?.id ?? 'me')
   const anchors = useMemo(() => pois.map(poiAnchor), [pois])
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1)
-    const { openPoi, simpleView, setNearPoi } = useStore.getState()
-    const locked = openPoi !== null || simpleView
+    const { openPoi, simpleView, wardrobeOpen, setNearPoi } = useStore.getState()
+    const locked = openPoi !== null || simpleView || wardrobeOpen
     const axes = locked ? { forward: 0, turn: 0, run: false } : readAxes()
     const { forward, turn: turnAxis } = axes
     const wantJump = consumeJump() && !locked
@@ -85,7 +87,7 @@ export function Player({ pois }: { pois: Poi[] }) {
 
   return (
     <group ref={group}>
-      <Visitor motion={playerState} color={visitorColor} />
+      <Visitor motion={playerState} color={visitorColor} look={look} onWardrobe={setWardrobe} />
       <EmoteBubble id={myId} />
     </group>
   )

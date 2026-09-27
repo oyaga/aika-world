@@ -8,12 +8,15 @@ import {
   type MoveAction,
   MOVE_RATE_HZ,
   PING,
+  type Look,
   type PlayerInfo,
+  type PlayerSnapshot,
   PROTOCOL_VERSION,
-  type QuatTuple,
   type ServerMessage,
 } from '@aika-world/shared'
+import { playerState } from '../state/player'
 import { useStore } from '../state/store'
+import { type Gesture, playGesture } from '../world/Characters'
 
 /**
  * Conexão com o servidor do mundo (Cloudflare Durable Object). Só liga se
@@ -41,6 +44,8 @@ export interface RemotePlayer {
   targetR: number
   r: number
   a: MoveAction
+  /** Último gesto recebido (ex.: aceno do emote 👋). */
+  gesture?: Gesture
 }
 
 /** Outros visitantes, fora do React (lidos a cada frame). A lista de ids fica no store. */
@@ -61,7 +66,8 @@ function syncIds() {
   useStore.getState().setRemoteIds([...remotes.keys()])
 }
 
-function addRemote(p: PlayerInfo & { q: QuatTuple; s: number; r: number; a: MoveAction }) {
+function addRemote(p: PlayerSnapshot) {
+  useStore.getState().setRemoteLook(p.id, p.look ?? null)
   const q = new Quaternion(...p.q)
   remotes.set(p.id, {
     info: { id: p.id, name: p.name, color: p.color },
@@ -83,6 +89,7 @@ function handle(msg: ServerMessage) {
       store.setNet({ status: 'online', me: msg.you, room })
       store.setVisitorColor(msg.you.color)
       syncIds()
+      sendLook(store.look)
       retry = 0
       lastS = -1 // reenvia a posição atual para quem já está na sala
       break
@@ -92,6 +99,7 @@ function handle(msg: ServerMessage) {
       break
     case 'leave':
       remotes.delete(msg.id)
+      store.setRemoteLook(msg.id, null)
       syncIds()
       break
     case 'move': {
@@ -104,8 +112,14 @@ function handle(msg: ServerMessage) {
       }
       break
     }
-    case 'emote':
+    case 'emote': {
       store.showEmote(msg.id, msg.emote)
+      const r = remotes.get(msg.id)
+      if (r && msg.emote === '👋') r.gesture = { name: 'Wave', id: Date.now() }
+      break
+    }
+    case 'look':
+      if (remotes.has(msg.id)) store.setRemoteLook(msg.id, msg.look)
       break
     case 'commit':
       // Etapa 3 (commits ao vivo).
@@ -188,9 +202,22 @@ export function sendMove(
 }
 
 export function sendEmote(emote: Emote) {
+  if (emote === '👋') playGesture(playerState, 'Wave')
   const me = useStore.getState().net.me
   useStore.getState().showEmote(me?.id ?? 'me', emote)
   send({ type: 'emote', emote })
 }
+
+function sendLook(look: Look) {
+  send({ type: 'look', look })
+}
+
+// Visual novo → avisa a sala (com uma pequena espera, para cliques seguidos virarem um envio).
+let lookTimer = 0
+useStore.subscribe((state, prev) => {
+  if (state.look === prev.look || !ws) return
+  window.clearTimeout(lookTimer)
+  lookTimer = window.setTimeout(() => sendLook(useStore.getState().look), 400)
+})
 
 export const multiplayerEnabled = Boolean(WORLD_URL)

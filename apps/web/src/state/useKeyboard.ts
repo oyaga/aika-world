@@ -26,11 +26,12 @@ export function useKeyboard() {
       if (isTyping(e.target)) return
       const store = useStore.getState()
       if (e.code === 'Escape') {
-        if (store.openPoi) store.close()
+        if (store.wardrobeOpen) store.setWardrobeOpen(false)
+        else if (store.openPoi) store.close()
         else if (store.simpleView) store.toggleSimpleView()
         return
       }
-      if (store.simpleView) return
+      if (store.simpleView || store.wardrobeOpen) return
       const digit = /^Digit([1-9])$/.exec(e.code)?.[1]
       const emote = digit ? EMOTES[Number(digit) - 1] : undefined
       if (emote && !store.openPoi && !e.repeat) {

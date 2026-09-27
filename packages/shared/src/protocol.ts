@@ -64,14 +64,32 @@ export interface MoveData {
   a: MoveAction
 }
 
-export interface PlayerSnapshot extends PlayerInfo, MoveData {}
+/** Categorias do guarda-roupa do visitante (meshes `<categoria>_<peça>` no visitante.glb). */
+export const LOOK_SLOTS = ['cabelo', 'cima', 'baixo', 'pes', 'acess'] as const
+export type LookSlot = (typeof LOOK_SLOTS)[number]
+/** Categorias com cor escolhível (materiais `Cima@tint`, `Baixo@tint`, `Pes@tint`). */
+export const LOOK_COLOR_SLOTS = ['cima', 'baixo', 'pes'] as const
+export type LookColorSlot = (typeof LOOK_COLOR_SLOTS)[number]
+
+/** Visual escolhido pelo visitante: uma peça por categoria e cores opcionais. */
+export interface Look {
+  outfit: Record<LookSlot, string>
+  colors: Partial<Record<LookColorSlot, string>>
+}
+
+export interface PlayerSnapshot extends PlayerInfo, MoveData {
+  look?: Look
+}
 
 /** Limites aceitos para `r` (o planeta tem raio ~20 m). */
 export const MIN_RADIUS = 14
 export const MAX_RADIUS = 30
 
 /** Mensagens enviadas do cliente para o servidor. */
-export type ClientMessage = ({ type: 'move' } & MoveData) | { type: 'emote'; emote: Emote }
+export type ClientMessage =
+  | ({ type: 'move' } & MoveData)
+  | { type: 'emote'; emote: Emote }
+  | { type: 'look'; look: Look }
 
 /** Mensagens enviadas do servidor para o cliente. */
 export type ServerMessage =
@@ -80,6 +98,7 @@ export type ServerMessage =
   | { type: 'leave'; id: string }
   | ({ type: 'move'; id: string } & MoveData)
   | { type: 'emote'; id: string; emote: Emote }
+  | { type: 'look'; id: string; look: Look }
   | { type: 'commit'; repo: string | null; secret: boolean; at: string }
 
 const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -92,6 +111,30 @@ export function sanitizeQuat(value: unknown): QuatTuple | null {
   if (len < 1e-6) return null
   const r = (n: number) => Math.round((n / len) * 10_000) / 10_000
   return [r(x), r(y), r(z), r(w)]
+}
+
+const PIECE = /^[a-z0-9_]{1,40}$/
+const COLOR = /^#[0-9a-f]{6}$/i
+
+/** Visual validado (nomes de peça e cores no formato certo), ou null. */
+export function sanitizeLook(value: unknown): Look | null {
+  if (typeof value !== 'object' || value === null) return null
+  const { outfit, colors } = value as { outfit?: unknown; colors?: unknown }
+  if (typeof outfit !== 'object' || outfit === null) return null
+  const clean: Partial<Record<LookSlot, string>> = {}
+  for (const slot of LOOK_SLOTS) {
+    const piece = (outfit as Record<string, unknown>)[slot]
+    if (typeof piece !== 'string' || !PIECE.test(piece) || !piece.startsWith(`${slot}_`)) return null
+    clean[slot] = piece
+  }
+  const cleanColors: Partial<Record<LookColorSlot, string>> = {}
+  if (typeof colors === 'object' && colors !== null) {
+    for (const slot of LOOK_COLOR_SLOTS) {
+      const color = (colors as Record<string, unknown>)[slot]
+      if (typeof color === 'string' && COLOR.test(color)) cleanColors[slot] = color.toLowerCase()
+    }
+  }
+  return { outfit: clean as Record<LookSlot, string>, colors: cleanColors }
 }
 
 /**
@@ -121,6 +164,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         r: clamp(Math.round(msg.r * 100) / 100, MIN_RADIUS, MAX_RADIUS),
         a: msg.a,
       }
+    }
+    case 'look': {
+      const look = sanitizeLook(msg.look)
+      return look ? { type: 'look', look } : null
     }
     case 'emote':
       return EMOTES.includes(msg.emote as Emote)

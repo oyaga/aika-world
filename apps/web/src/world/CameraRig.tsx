@@ -2,9 +2,15 @@ import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Matrix4, type PerspectiveCamera, Quaternion, Vector3 } from 'three'
 import { playerState } from '../state/player'
+import { useStore } from '../state/store'
 
 const OFFSET = new Vector3(0, 6.5, -10) // atrás (-Z) e acima (+Y) no referencial local
 const LOOK_AHEAD = new Vector3(0, 1.2, 4)
+/** Guarda-roupa aberto: câmera de frente para o visitante, como num provador. */
+const FITTING_OFFSET = new Vector3(0, 1.6, 3.8)
+const FITTING_LOOK = new Vector3(0, 1.05, 0)
+/** Em tela em pé, o painel cobre a parte de baixo: mira abaixo para o personagem subir na tela. */
+const FITTING_LOOK_PORTRAIT = new Vector3(0, -0.3, 0)
 
 const desiredPos = new Vector3()
 const lookAt = new Vector3()
@@ -12,7 +18,7 @@ const up = new Vector3()
 const m = new Matrix4()
 const desiredQuat = new Quaternion()
 
-/** Câmera em terceira pessoa que segue a Aika suavemente no referencial local dela. */
+/** Câmera em terceira pessoa que segue o visitante suavemente no referencial local dele. */
 export function CameraRig() {
   const initialized = useRef(false)
   const camera = useThree((s) => s.camera) as PerspectiveCamera
@@ -27,8 +33,11 @@ export function CameraRig() {
   useFrame(({ camera }, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1)
     const q = playerState.orientation
-    desiredPos.copy(OFFSET).applyQuaternion(q).add(playerState.position)
-    lookAt.copy(LOOK_AHEAD).applyQuaternion(q).add(playerState.position)
+    const fitting = useStore.getState().wardrobeOpen
+    const offset = fitting ? FITTING_OFFSET : OFFSET
+    const target = fitting ? (aspect < 0.8 ? FITTING_LOOK_PORTRAIT : FITTING_LOOK) : LOOK_AHEAD
+    desiredPos.copy(offset).applyQuaternion(q).add(playerState.position)
+    lookAt.copy(target).applyQuaternion(q).add(playerState.position)
     up.set(0, 1, 0).applyQuaternion(q)
 
     m.lookAt(desiredPos, lookAt, up)

@@ -11,7 +11,7 @@ export function Joystick() {
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const base = useRef<HTMLDivElement>(null)
   const active = useRef<number | null>(null)
-  const hidden = useStore((s) => s.openPoi !== null)
+  const hidden = useStore((s) => s.openPoi !== null || s.wardrobeOpen)
 
   useEffect(
     () => () => {

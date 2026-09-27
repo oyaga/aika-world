@@ -45,6 +45,7 @@ class Bucket {
 interface Limits {
   move: Bucket
   emote: Bucket
+  look: Bucket
   invalid: number
 }
 
@@ -120,6 +121,11 @@ export class World extends DurableObject<Env> {
       Object.assign(me, move)
       ws.serializeAttachment(me)
       this.broadcast({ type: 'move', id: me.id, ...move }, ws)
+    } else if (msg.type === 'look') {
+      if (!limits.look.take()) return
+      me.look = msg.look
+      ws.serializeAttachment(me)
+      this.broadcast({ type: 'look', id: me.id, look: msg.look }, ws)
     } else if (msg.type === 'emote') {
       if (!limits.emote.take()) return
       this.broadcast({ type: 'emote', id: me.id, emote: msg.emote }, ws)
@@ -151,6 +157,7 @@ export class World extends DurableObject<Env> {
       l = {
         move: new Bucket(MOVE_RATE_HZ * 1.5, MOVE_RATE_HZ * 1.5),
         emote: new Bucket(2, 1),
+        look: new Bucket(3, 0.5),
         invalid: 0,
       }
       this.limits.set(ws, l)

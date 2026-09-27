@@ -17,6 +17,7 @@ export function TouchControls({ pois }: { pois: Poi[] }) {
   const [running, setRunning] = useState(false)
   const nearPoi = useStore((s) => s.nearPoi)
   const openPoi = useStore((s) => s.openPoi)
+  const wardrobeOpen = useStore((s) => s.wardrobeOpen)
   const open = useStore((s) => s.open)
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function TouchControls({ pois }: { pois: Poi[] }) {
     [],
   )
 
-  if (!touch || openPoi) return null
+  if (!touch || openPoi || wardrobeOpen) return null
   const near = pois.find((p) => p.id === nearPoi)
   const talk = near ? dialogueFor(near) !== null : false
 

@@ -5,9 +5,10 @@ import { poiTitle, type Poi } from '../world/layout'
 export function Hint({ pois }: { pois: Poi[] }) {
   const nearPoi = useStore((s) => s.nearPoi)
   const openPoi = useStore((s) => s.openPoi)
+  const wardrobeOpen = useStore((s) => s.wardrobeOpen)
   const open = useStore((s) => s.open)
   const poi = pois.find((p) => p.id === nearPoi)
-  if (!poi || openPoi) return null
+  if (!poi || openPoi || wardrobeOpen) return null
   const talk = dialogueFor(poi) !== null
   return (
     <div className="hint" role="status" aria-live="polite">

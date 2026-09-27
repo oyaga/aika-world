@@ -1,4 +1,5 @@
 import type { Object3D } from 'three'
+import { LOOK_SLOTS, type LookSlot } from '@aika-world/shared'
 
 /**
  * Guarda-roupa do visitante: o `visitante.glb` traz o corpo e todas as peças
@@ -6,8 +7,8 @@ import type { Object3D } from 'three'
  * esqueleto; aqui escolhemos uma peça por categoria e escondemos as outras.
  * Ver docs/direcao-de-arte-v2.md, seção 4.1.
  */
-export const WARDROBE_SLOTS = ['cabelo', 'cima', 'baixo', 'pes', 'acess'] as const
-export type WardrobeSlot = (typeof WARDROBE_SLOTS)[number]
+export const WARDROBE_SLOTS = LOOK_SLOTS
+export type WardrobeSlot = LookSlot
 export type Outfit = Record<WardrobeSlot, string>
 
 export const DEFAULT_OUTFIT: Outfit = {
@@ -39,8 +40,9 @@ export function wardrobeCatalog(root: Object3D): Record<WardrobeSlot, Object3D[]
 
 /**
  * Mostra só a peça escolhida de cada categoria (ou a primeira que existir, se
- * a escolhida não estiver no arquivo). Peças com `esconde = "cima"` (ex.:
- * macacão) escondem a categoria indicada. Modelos sem peças não mudam.
+ * a escolhida não estiver no arquivo). `<categoria>_nenhum` esconde a
+ * categoria inteira. Peças com `esconde = "cima"` (ex.: macacão) escondem a
+ * categoria indicada. Modelos sem peças não mudam.
  */
 export function applyOutfit(root: Object3D, outfit: Outfit = DEFAULT_OUTFIT) {
   const catalog = wardrobeCatalog(root)
@@ -48,6 +50,11 @@ export function applyOutfit(root: Object3D, outfit: Outfit = DEFAULT_OUTFIT) {
   const chosen = new Map<WardrobeSlot, Object3D>()
   for (const slot of WARDROBE_SLOTS) {
     const pieces = catalog[slot]
+    // `<categoria>_nenhum` (ex.: acess_nenhum) = sem peça nessa categoria.
+    if (outfit[slot]?.endsWith('_nenhum')) {
+      hidden.add(slot)
+      continue
+    }
     const pick =
       pieces.find((p) => p.name.toLowerCase() === outfit[slot]) ??
       pieces.find((p) => p.name.toLowerCase() !== 'acess_nenhum') ??
@@ -62,4 +69,38 @@ export function applyOutfit(root: Object3D, outfit: Outfit = DEFAULT_OUTFIT) {
       piece.visible = !hidden.has(slot) && piece === chosen.get(slot)
     }
   }
+}
+
+/** Nomes das peças por categoria (para a tela do guarda-roupa). */
+export function wardrobeNames(root: Object3D): Record<WardrobeSlot, string[]> {
+  const catalog = wardrobeCatalog(root)
+  return Object.fromEntries(
+    WARDROBE_SLOTS.map((slot) => [slot, catalog[slot].map((o) => o.name.toLowerCase())]),
+  ) as Record<WardrobeSlot, string[]>
+}
+
+const WORDS: Record<string, string> = {
+  baguncado: 'bagunçado',
+  sueter: 'suéter',
+  macacao: 'macacão',
+  oculos: 'óculos',
+  bone: 'boné',
+  calca: 'calça',
+  tenis: 'tênis',
+}
+
+/** "cima_jaqueta_bomber" → "Jaqueta bomber". */
+export function pieceLabel(name: string): string {
+  const words = name
+    .split('_')
+    .slice(1)
+    .map((w) => WORDS[w] ?? w)
+  const special: Record<string, string> = {
+    'cano alto': 'de cano alto',
+    'chinelo meia': 'chinelo com meia',
+    'bolsa carteiro': 'bolsa-carteiro',
+  }
+  let text = words.join(' ')
+  for (const [from, to] of Object.entries(special)) text = text.replace(from, to)
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }

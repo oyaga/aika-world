@@ -49,6 +49,7 @@ function Milestone({ poi }: { poi: StoryPoi }) {
         dir={poi.dir}
         lookAt={UP}
         name={narrator.name}
+        poiId={poi.id}
         model={poi.milestone.npc ? 'npc' : 'felipe'}
         look={{
           outfit: poi.milestone.npc?.outfit ?? BRAND.dark,

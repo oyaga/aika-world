@@ -1,4 +1,5 @@
 import { Quaternion, Vector3 } from 'three'
+import type { Gesture } from '../world/Characters'
 import type { MoveState } from '../world/locomotion'
 
 /**
@@ -17,6 +18,8 @@ export const playerState = {
   speed: 0,
   /** Momento (performance.now) do último pulo, para a Aika pular junto. */
   jumpedAt: 0,
+  /** Gesto único em andamento (ex.: aceno). */
+  gesture: null as Gesture | null,
 }
 
 /**
@@ -34,6 +37,9 @@ export const aikaState = {
   speed: 0,
   /** Último pulo do visitante que a Aika já imitou. */
   copiedJump: 0,
+  /** Último aceno do visitante que a Aika já respondeu. */
+  answeredWave: 0,
+  gesture: null as Gesture | null,
   /** false até o primeiro frame, quando ela aparece ao lado do visitante. */
   placed: false,
 }

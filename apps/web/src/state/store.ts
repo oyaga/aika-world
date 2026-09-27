@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 import type { Vector3 } from 'three'
-import type { Emote, PlayerInfo, WorldData } from '@aika-world/shared'
+import type {
+  Emote,
+  Look,
+  LookColorSlot,
+  LookSlot,
+  PlayerInfo,
+  WorldData,
+} from '@aika-world/shared'
+import { DEFAULT_OUTFIT } from '../world/wardrobe'
 import type { LandmarkKind } from '../world/layout'
 
 export type PoiId = string
@@ -36,6 +44,14 @@ interface AppState {
   remoteIds: string[]
   /** Emote visível sobre a cabeça de cada visitante (id → emote); some sozinho. */
   emotes: Record<string, { emote: Emote; key: number }>
+  /** Tela do guarda-roupa aberta (visitante parado, câmera de frente). */
+  wardrobeOpen: boolean
+  /** Visual do visitante (salvo neste navegador). */
+  look: Look
+  /** Peças que existem no visitante.glb; null = sem guarda-roupa (sem modelo). */
+  wardrobe: Record<LookSlot, string[]> | null
+  /** Visual dos outros visitantes (id → visual). */
+  remoteLooks: Record<string, Look>
   loadWorld: () => Promise<void>
   setNearPoi: (id: PoiId | null) => void
   open: (id: PoiId) => void
@@ -48,6 +64,32 @@ interface AppState {
   setNet: (net: Partial<AppState['net']>) => void
   setRemoteIds: (ids: string[]) => void
   showEmote: (id: string, emote: Emote) => void
+  setWardrobeOpen: (open: boolean) => void
+  setWardrobe: (catalog: Record<LookSlot, string[]>) => void
+  setPiece: (slot: LookSlot, piece: string) => void
+  setLookColor: (slot: LookColorSlot, color: string | null) => void
+  setRemoteLook: (id: string, look: Look | null) => void
+}
+
+const LOOK_KEY = 'aika-world:visual'
+
+function loadLook(): Look {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(LOOK_KEY) ?? 'null') as Look | null
+    if (saved?.outfit && saved.colors)
+      return { outfit: { ...DEFAULT_OUTFIT, ...saved.outfit }, colors: saved.colors }
+  } catch {
+    // Sem armazenamento (aba anônima, bloqueado): usa o padrão.
+  }
+  return { outfit: { ...DEFAULT_OUTFIT }, colors: {} }
+}
+
+function saveLook(look: Look) {
+  try {
+    window.localStorage.setItem(LOOK_KEY, JSON.stringify(look))
+  } catch {
+    // Ignora: o visual só não fica salvo para a próxima visita.
+  }
 }
 
 const EMOTE_MS = 2500
@@ -74,6 +116,10 @@ export const useStore = create<AppState>((set, get) => ({
   net: { status: 'offline', me: null, room: 1 },
   remoteIds: [],
   emotes: {},
+  wardrobeOpen: false,
+  look: loadLook(),
+  wardrobe: null,
+  remoteLooks: {},
   visitorColor: VISITOR_COLORS[Math.floor(Math.random() * VISITOR_COLORS.length)] ?? '#3fb5a0',
   loadWorld: async () => {
     if (get().world) return
@@ -103,6 +149,30 @@ export const useStore = create<AppState>((set, get) => ({
   setVisitorColor: (visitorColor) => set({ visitorColor }),
   setNet: (net) => set((s) => ({ net: { ...s.net, ...net } })),
   setRemoteIds: (remoteIds) => set({ remoteIds }),
+  setWardrobeOpen: (wardrobeOpen) => set({ wardrobeOpen, openPoi: null }),
+  setWardrobe: (wardrobe) => set({ wardrobe }),
+  setPiece: (slot, piece) =>
+    set((s) => {
+      const look = { ...s.look, outfit: { ...s.look.outfit, [slot]: piece } }
+      saveLook(look)
+      return { look }
+    }),
+  setLookColor: (slot, color) =>
+    set((s) => {
+      const colors = { ...s.look.colors }
+      if (color) colors[slot] = color
+      else delete colors[slot]
+      const look = { ...s.look, colors }
+      saveLook(look)
+      return { look }
+    }),
+  setRemoteLook: (id, look) =>
+    set((s) => {
+      const remoteLooks = { ...s.remoteLooks }
+      if (look) remoteLooks[id] = look
+      else delete remoteLooks[id]
+      return { remoteLooks }
+    }),
   showEmote: (id, emote) => {
     const key = ++emoteKey
     set((s) => ({ emotes: { ...s.emotes, [id]: { emote, key } } }))

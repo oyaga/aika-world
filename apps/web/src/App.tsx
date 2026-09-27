@@ -10,6 +10,7 @@ import { Loading } from './ui/Loading'
 import { Panel } from './ui/Panel'
 import { SimpleView } from './ui/SimpleView'
 import { TouchControls } from './ui/TouchControls'
+import { WardrobeButton, WardrobePanel } from './ui/WardrobePanel'
 import { SERVICES, STORY } from './content'
 import {
   DEFAULT_SERVICES_CENTER,
@@ -96,19 +97,23 @@ export function App() {
           <Panel pois={pois} />
           <Joystick />
           <TouchControls pois={pois} />
+          <WardrobePanel />
         </>
       )}
 
       {simpleView && <SimpleView houses={houses} />}
 
-      <button
-        type="button"
-        className="simple-toggle"
-        onClick={toggleSimpleView}
-        aria-pressed={simpleView}
-      >
-        {simpleView ? 'Versão 3D' : 'Versão simples'}
-      </button>
+      <div className="top-actions">
+        {!simpleView && <WardrobeButton />}
+        <button
+          type="button"
+          className="top-button"
+          onClick={toggleSimpleView}
+          aria-pressed={simpleView}
+        >
+          {simpleView ? 'Versão 3D' : 'Versão simples'}
+        </button>
+      </div>
 
       <Loading ready={sceneReady || simpleView} />
     </>

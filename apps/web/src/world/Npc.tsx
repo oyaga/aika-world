@@ -68,6 +68,8 @@ interface NpcProps {
   look: NpcLook
   /** Modelo .glb que substitui o boneco (materiais `@tint` recebem `look.outfit`). */
   model: ModelName
+  /** Ponto de interesse deste NPC: com a conversa dele aberta, toca `Talk`. */
+  poiId?: string
 }
 
 const FACE_PLAYER_DISTANCE = 7
@@ -75,7 +77,8 @@ const local = new Vector3()
 const inv = new Quaternion()
 
 /** NPC parado que se vira para a Aika quando ela chega perto. */
-export function Npc({ dir, lookAt, name, look, model }: NpcProps) {
+export function Npc({ dir, lookAt, name, look, model, poiId }: NpcProps) {
+  const talking = useStore((s) => poiId !== undefined && s.openPoi === poiId)
   const body = useRef<Group>(null)
   const yaw = useRef(0)
   const reducedMotion = useStore((s) => s.reducedMotion)
@@ -109,7 +112,7 @@ export function Npc({ dir, lookAt, name, look, model }: NpcProps) {
           <Model
             name={model}
             tint={look.outfit}
-            animation="Idle"
+            animation={talking ? 'Talk' : 'Idle'}
             fallback={<NpcPlaceholder {...look} />}
           />
         </group>

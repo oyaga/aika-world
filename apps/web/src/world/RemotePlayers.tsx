@@ -29,6 +29,7 @@ function RemoteVisitor({ id }: { id: string }) {
   const group = useRef<Group>(null)
   const motion = useRef<Motion>({ speed: 0, state: 'ground' })
   const player = remotes.get(id)
+  const look = useStore((s) => s.remoteLooks[id])
 
   useFrame((_, rawDelta) => {
     const r = remotes.get(id)
@@ -42,13 +43,14 @@ function RemoteVisitor({ id }: { id: string }) {
     g.quaternion.copy(r.current)
     motion.current.speed += (r.s - motion.current.speed) * Math.min(1, dt * 8)
     motion.current.state = STATES[r.a]
+    motion.current.gesture = r.gesture ?? null
   })
 
   if (!player) return null
   return (
     <>
       <group ref={group}>
-        <Visitor motion={motion.current} color={player.info.color} />
+        <Visitor motion={motion.current} color={player.info.color} look={look} />
         <EmoteBubble id={id} />
         <Label position={[0, 2.3, 0]} text={player.info.name} muted />
       </group>

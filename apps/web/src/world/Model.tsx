@@ -1,6 +1,6 @@
-import { Component, type ReactNode, Suspense, useEffect, useMemo } from 'react'
+import { Component, type ReactNode, Suspense, useEffect, useMemo, useRef } from 'react'
 import { useAnimations, useGLTF } from '@react-three/drei'
-import type { Object3D } from 'three'
+import type { AnimationAction, Object3D } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
 import { type Tint, toonify } from './materials'
@@ -48,13 +48,26 @@ function Glb({ url, tint, scale, animation }: GlbProps) {
   const object = useModelClone(url, tint)
   const { animations } = useGLTF(url, DRACO_PATH)
   const { actions } = useAnimations(animations, object)
+  const current = useRef<AnimationAction | null>(null)
+  // Troca de ação com transição (ex.: Idle → Talk ao abrir a conversa).
   useEffect(() => {
-    const action = animation ? actions[animation] : undefined
-    action?.reset().play()
-    return () => {
-      action?.stop()
-    }
+    const next = animation ? (actions[animation] ?? actions.Idle ?? null) : null
+    const prev = current.current
+    if (next === prev) return
+    next
+      ?.reset()
+      .fadeIn(prev ? 0.3 : 0)
+      .play()
+    prev?.fadeOut(0.3)
+    current.current = next
   }, [actions, animation])
+  useEffect(
+    () => () => {
+      current.current?.stop()
+      current.current = null
+    },
+    [actions],
+  )
   return <primitive object={object} scale={scale ?? [1, 1, 1]} />
 }
 
@@ -66,7 +79,7 @@ interface ModelProps {
   tint?: string
   /** Escala aplicada só ao .glb (a forma simples já tem o tamanho certo). */
   scale?: Scale
-  /** Ação do .glb tocada em loop, se existir (ex.: `Idle` dos NPCs). */
+  /** Ação do .glb tocada em loop (sem ela no arquivo, usa `Idle`). Trocar faz transição. */
   animation?: string
 }
 

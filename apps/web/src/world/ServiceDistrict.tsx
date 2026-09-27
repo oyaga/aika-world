@@ -72,6 +72,7 @@ function ServiceSpot({ poi, index }: { poi: ServicePoi; index: number }) {
         dir={poi.dir}
         lookAt={poi.center}
         name={service.npc.name}
+        poiId={poi.id}
         model={firstModel(`npc_${service.slug}`, 'npc')}
         look={{ outfit: service.color, hair: '#2b2238', accent: BRAND.orange }}
       />

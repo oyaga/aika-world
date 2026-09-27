@@ -224,6 +224,7 @@ function Felipe({ poi }: { poi: LandmarkPoi }) {
       dir={dir}
       lookAt={poi.forward ?? UP}
       name="Felipe"
+      poiId={poi.id}
       model="felipe"
       look={{ outfit: BRAND.dark, hair: '#15110f', accent: BRAND.orange }}
     />
