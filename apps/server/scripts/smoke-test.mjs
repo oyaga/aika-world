@@ -77,6 +77,42 @@ await wait(300)
 const burst = b.inbox.filter((m) => m.type === 'move').length - before
 check(`moves limitados (${burst} de 60 passaram)`, burst > 0 && burst <= 16)
 
+const look = {
+  outfit: {
+    cabelo: 'cabelo_rabo',
+    cima: 'cima_regata',
+    baixo: 'baixo_saia',
+    pes: 'pes_bota',
+    acess: 'acess_nenhum',
+  },
+  colors: { cima: '#FF5A02', pes: 'vermelho' },
+}
+a.send(JSON.stringify({ type: 'look', look }))
+await wait(200)
+const lk = b.inbox.find((m) => m.type === 'look')
+check(
+  'B recebe o visual de A (cor inválida descartada)',
+  lk?.id === welA.you.id &&
+    lk.look.outfit.cima === 'cima_regata' &&
+    lk.look.colors.cima === '#ff5a02' &&
+    !('pes' in lk.look.colors),
+)
+a.send(JSON.stringify({ type: 'look', look: { outfit: { ...look.outfit, cima: 'baixo_saia' } } }))
+await wait(200)
+check(
+  'visual com peça na categoria errada é ignorado',
+  b.inbox.filter((m) => m.type === 'look').length === 1,
+)
+const c = await open()
+await wait(200)
+check(
+  'quem entra depois recebe o visual de A',
+  c.inbox.find((m) => m.type === 'welcome')?.players.find((p) => p.id === welA.you.id)?.look?.outfit
+    .pes === 'pes_bota',
+)
+c.close()
+await wait(200)
+
 a.send('ping')
 await wait(200)
 check('ping → pong automático', a.inbox.includes('pong'))

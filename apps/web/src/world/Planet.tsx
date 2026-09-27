@@ -21,6 +21,8 @@ import { setTerrain } from './terrain'
 
 const LANDMARK_KINDS: LandmarkKind[] = ['templo', 'correio']
 const DEFAULT_VILA_RADIUS = 12 // metros
+/** Contorno um pouco mais grosso no planeta (visto de mais longe). */
+const PLANET_OUTLINE = 0.035
 
 /**
  * Planeta: `planeta.glb` quando existir, senão a esfera procedural.
@@ -78,6 +80,7 @@ function readMarkers(root: Object3D): {
   root.traverse((obj) => {
     const name = obj.name.toLowerCase()
     const mesh = obj as Mesh
+    if (mesh.userData.contorno) return
     if (mesh.isMesh) {
       // Malhas com vários materiais viram filhos do objeto do Blender: vale o nome dele.
       const kind = meshKind(mesh, root)
@@ -113,7 +116,7 @@ function readMarkers(root: Object3D): {
 }
 
 function PlanetModel({ url }: { url: string }) {
-  const root = useModelClone(url)
+  const root = useModelClone(url, undefined, PLANET_OUTLINE)
   const setMarkers = useStore((s) => s.setMarkers)
 
   useLayoutEffect(() => {

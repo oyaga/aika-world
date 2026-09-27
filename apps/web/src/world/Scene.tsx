@@ -2,7 +2,10 @@ import { useEffect, useMemo } from 'react'
 import { Stars } from '@react-three/drei'
 import { modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
+import { Atmosphere } from './Atmosphere'
 import { CameraRig } from './CameraRig'
+import { Effects } from './Effects'
+import { isTouchDevice } from '../lib/device'
 import { Companion } from './Companion'
 import { Houses } from './Houses'
 import { Landmarks } from './Landmarks'
@@ -33,6 +36,7 @@ interface SceneProps {
 }
 
 const hasPlanetModel = modelUrl('planeta') !== undefined
+const lowPower = isTouchDevice()
 
 export function Scene({ landmarks, story, services, houses, pois, onReady }: SceneProps) {
   const reducedMotion = useStore((s) => s.reducedMotion)
@@ -51,10 +55,7 @@ export function Scene({ landmarks, story, services, houses, pois, onReady }: Sce
 
   return (
     <>
-      <color attach="background" args={['#1b1733']} />
-      <fog attach="fog" args={['#1b1733', 30, 70]} />
-      <hemisphereLight args={['#ffe9f3', '#3a3160', 1.1]} />
-      <directionalLight position={[30, 40, 20]} intensity={1.6} />
+      <Atmosphere />
       <Stars radius={90} depth={30} count={1500} factor={3} fade speed={reducedMotion ? 0 : 0.5} />
 
       <Planet />
@@ -68,6 +69,7 @@ export function Scene({ landmarks, story, services, houses, pois, onReady }: Sce
       <RemotePlayers />
       <Splashes />
       <CameraRig />
+      <Effects lowPower={lowPower} />
     </>
   )
 }

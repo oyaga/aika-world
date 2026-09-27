@@ -3,7 +3,7 @@ import { useAnimations, useGLTF } from '@react-three/drei'
 import type { AnimationAction, Object3D } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
-import { type Tint, toonify } from './materials'
+import { addOutlines, type Tint, toonify } from './materials'
 
 interface BoundaryProps {
   fallback: ReactNode
@@ -27,12 +27,21 @@ export class ModelBoundary extends Component<BoundaryProps, { failed: boolean }>
   }
 }
 
-/** Cópia independente da cena do glTF, já com materiais cartoon. */
-export function useModelClone(url: string, tint?: Tint): Object3D {
+/** Espessura padrão do contorno de tinta, em metros (no espaço do modelo). */
+export const OUTLINE = 0.022
+
+/** Cópia independente da cena do glTF, com materiais cartoon e contorno de tinta. */
+export function useModelClone(url: string, tint?: Tint, outline = OUTLINE): Object3D {
   const { scene } = useGLTF(url, DRACO_PATH)
   const tintKey = typeof tint === 'string' || tint === undefined ? tint : JSON.stringify(tint)
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `tintKey` representa `tint`
-  return useMemo(() => toonify(cloneSkinned(scene), tint), [scene, tintKey])
+  return useMemo(
+    () => {
+      const root = toonify(cloneSkinned(scene), tint)
+      return outline > 0 ? addOutlines(root, outline) : root
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `tintKey` representa `tint`
+    [scene, tintKey, outline],
+  )
 }
 
 type Scale = [number, number, number]

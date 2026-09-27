@@ -129,6 +129,14 @@ quatro casas secretas.
   partir de `SERVICES` e `STORY` em `content.tsx`. A caixa de diálogo digita as falas, aceita E/Espaço/Enter para
   avançar e 1–9 para escolher. Os NPCs se viram para o visitante quando ele chega perto.
 - **Árvores e pedras**: posicionamento determinístico (RNG com semente) e `InstancedMesh`.
+- **Visual (direção de arte v2)**: contorno de tinta por casca invertida com normais suavizadas
+  (`addOutlines` em `world/materials.tsx`), sombreamento cartoon em 2 tons com sombra turquesa (luz
+  de hemisfério), céu em degradê da "hora azul" e sol que acompanha o visitante
+  (`world/Atmosphere.tsx`), e bloom só nos emissivos (`world/Effects.tsx`, materiais `@unlit`
+  multiplicados por `GLOW`).
+- **Guarda-roupa**: botão "👕 Visual" abre a tela de personagem (peças por categoria e cores);
+  o visual fica salvo no navegador e vai pela rede para os outros visitantes. `Wave` toca no emote
+  👋 e os NPCs usam `Talk` durante a conversa.
 - **Modelos 3D**: cada `.glb` em `apps/web/src/assets/models/` substitui a forma simples
   correspondente (com fallback se faltar ou falhar) e ganha materiais cartoon. Com `planeta.glb`,
   os personagens seguem o relevo e os Empties `poi_*`, `area_vila` e `bloqueio_*` definem marcos, vila e
