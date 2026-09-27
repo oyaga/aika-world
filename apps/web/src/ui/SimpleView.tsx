@@ -35,7 +35,7 @@ export function SimpleView({ houses }: { houses: HousePoi[] }) {
               <li key={`${m.when}-${m.title}`}>
                 <span className="story__when">{m.when}</span>
                 <h3>{m.title}</h3>
-                <p>{m.text}</p>
+                <p>{m.lines.join(' ')}</p>
               </li>
             ))}
           </ol>

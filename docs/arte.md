@@ -84,8 +84,9 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 - Relevo é bem-vindo: morros suaves, lago afundado, caminho. A Aika segue a altura do terreno.
   Evite paredes verticais onde ela anda.
 - **Trilha da história:** modele um caminho que dá a volta inteira no planeta. Ao longo dele ficam
-  as placas com os marcos da vida do Felipe, posicionadas pelos Empties `historia_N`. Sem os
-  Empties, o código coloca as placas num anel a cerca de 76° do polo norte.
+  NPCs (por padrão, o Felipe de cada época) que contam os marcos da vida dele em conversa, cada
+  um com uma placa do ano atrás. Posicione-os com os Empties `historia_N`; sem eles, o código
+  usa um anel a cerca de 75° do polo norte.
 - Mantenha a superfície andável entre **19 e 21 m** do centro.
 - A decoração fixa (árvores, pedras, cercas) pode ser modelada direto no planeta. Com
   `planeta.glb`, o código não espalha as árvores e pedras de primitivas.
@@ -116,7 +117,8 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 ## NPCs (Felipe e atendentes)
 
 - Mesma escala e orientação da Aika (cerca de 2 m, frente em −Y, pés em Z = 0).
-- `felipe.glb`: o Felipe, roupa escura com detalhes laranja. Ele se vira para a Aika quando ela
+- `felipe.glb`: o Felipe, roupa escura com detalhes laranja. Também é usado nos NPCs da Trilha
+  da história (o Felipe de cada época). Ele se vira para a Aika quando ela
   chega perto (o código gira o modelo inteiro).
 - `npc.glb`: um atendente genérico usado nos 6 serviços. A roupa usa um material `@tint`, que
   recebe a cor de cada prédio.

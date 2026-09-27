@@ -27,7 +27,7 @@ const DEFAULT_VILA_RADIUS = 12 // metros
  *   (a frente do Empty, −Y no Blender, é para onde o prédio olha);
  * - `area_vila`   → Empty no centro da vila das casas (propriedade `raio` em metros);
  * - `area_servicos` → Empty no centro da Praça dos Serviços;
- * - `historia_1`, `historia_2`… → Empties com a posição das placas da história.
+ * - `historia_1`, `historia_2`… → Empties com a posição dos NPCs da história.
  */
 export function Planet() {
   const url = modelUrl('planeta')

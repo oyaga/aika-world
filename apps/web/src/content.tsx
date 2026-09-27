@@ -98,27 +98,40 @@ export const SERVICES: Service[] = [
 ]
 
 export interface StoryMilestone {
-  /** Ano ou período, ex.: "2019" ou "2019–2021". */
+  /** Ano ou período, ex.: "2019" ou "2019–2021". Aparece na placa ao lado do NPC. */
   when: string
   title: string
-  text: string
+  /** Falas do NPC ao contar este capítulo (mostradas uma a uma). */
+  lines: string[]
+  /**
+   * Quem conta o capítulo. Padrão: o próprio Felipe naquela época
+   * ("Felipe · 2018"), falando em primeira pessoa.
+   */
+  npc?: { name: string; role: string; outfit?: string }
 }
 
 /**
- * Trilha da história: marcos da vida do Felipe, em ordem. Cada um vira uma
- * placa no caminho que dá a volta no planeta.
+ * Trilha da história: marcos da vida do Felipe, em ordem. Cada um vira um
+ * NPC no caminho que dá a volta no planeta; a história é contada em conversa
+ * quando a Aika chega perto e interage.
  * TODO: substituir pelos marcos reais contados pelo Felipe.
  */
 export const STORY: StoryMilestone[] = [
   {
     when: 'Em breve',
     title: 'O começo',
-    text: 'Aqui vai o primeiro capítulo da história do Felipe. Conteúdo a ser preenchido.',
+    lines: [
+      'Oi! Eu sou o Felipe de um tempo atrás.',
+      'Este é o começo da minha história… que eu ainda vou te contar direitinho. Volte em breve!',
+    ],
   },
   {
     when: 'Em breve',
     title: 'Nasce a Aika',
-    text: 'O Felipe me criou como uma extensão da visão estratégica dele: uma agente conectada a várias ferramentas e modelos de linguagem.',
+    lines: [
+      'Foi aqui que eu criei a Aika, como uma extensão da minha visão estratégica.',
+      'Uma agente conectada a várias ferramentas e modelos de linguagem, pronta para qualquer demanda.',
+    ],
   },
 ]
 

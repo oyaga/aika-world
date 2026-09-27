@@ -1,9 +1,11 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { type InstancedMesh, Matrix4, Vector3 } from 'three'
 import { faceTowards, PLANET_RADIUS, surfaceQuaternion, UP } from '../lib/sphere'
+import { storyNarrator } from '../dialogues'
 import { Label } from './Label'
 import { type StoryPoi, trailDirs } from './layout'
 import { Toon } from './materials'
+import { Npc } from './Npc'
 import { BRAND } from './palette'
 import { surfaceRadius } from './terrain'
 
@@ -27,13 +29,14 @@ function Signpost() {
 }
 
 function Milestone({ poi }: { poi: StoryPoi }) {
+  const narrator = storyNarrator(poi.milestone)
   const { position, quaternion, labelPos } = useMemo(() => {
-    const ground = surfaceRadius(poi.dir)
+    const ground = surfaceRadius(poi.signDir)
     return {
-      position: poi.dir.clone().multiplyScalar(ground),
+      position: poi.signDir.clone().multiplyScalar(ground),
       // A placa olha para o polo norte, de onde a Aika costuma vir.
-      quaternion: faceTowards(poi.dir, UP),
-      labelPos: poi.dir.clone().multiplyScalar(ground + 2.4),
+      quaternion: faceTowards(poi.signDir, UP),
+      labelPos: poi.signDir.clone().multiplyScalar(ground + 3.2),
     }
   }, [poi])
   return (
@@ -42,6 +45,17 @@ function Milestone({ poi }: { poi: StoryPoi }) {
         <Signpost />
       </group>
       <Label position={labelPos} text={poi.label} />
+      <Npc
+        dir={poi.dir}
+        lookAt={UP}
+        name={narrator.name}
+        model={poi.milestone.npc ? 'npc' : 'felipe'}
+        look={{
+          outfit: poi.milestone.npc?.outfit ?? BRAND.dark,
+          hair: '#15110f',
+          accent: BRAND.orange,
+        }}
+      />
     </>
   )
 }
@@ -76,8 +90,9 @@ function Stones() {
 }
 
 /**
- * Trilha da história: placas com os marcos da vida do Felipe. Com
- * `planeta.glb`, o caminho é modelado no Blender e só as placas aparecem.
+ * Trilha da história: em cada marco, um NPC (por padrão, o Felipe daquela
+ * época) conta o capítulo em conversa, com a placa do ano atrás dele. Com
+ * `planeta.glb`, o caminho é modelado no Blender e só NPCs e placas aparecem.
  */
 export function Trail({ story, showPath }: { story: StoryPoi[]; showPath: boolean }) {
   return (

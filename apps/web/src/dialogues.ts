@@ -1,4 +1,4 @@
-import { CONTACT, type Service } from './content'
+import { CONTACT, type Service, type StoryMilestone } from './content'
 import type { Poi } from './world/layout'
 
 /**
@@ -55,7 +55,7 @@ export const FELIPE_DIALOGUE: Dialogue = {
     felipe: {
       lines: [
         'Sou designer e desenvolvedor. Trabalho com sites, identidade visual, vídeo, servidores, SEO e assistentes de IA.',
-        'Minha trajetória está na trilha de placas que dá a volta no planeta. Vale a caminhada!',
+        'Minha trajetória está na trilha que dá a volta no planeta: em cada parada, um eu do passado conta um capítulo.',
       ],
     },
     aika: {
@@ -122,9 +122,44 @@ export function serviceDialogue(service: Service): Dialogue {
   }
 }
 
+/** Quem conta um capítulo da história (padrão: o Felipe daquela época). */
+export function storyNarrator(milestone: StoryMilestone) {
+  return (
+    milestone.npc ?? {
+      name: `Felipe · ${milestone.when}`,
+      role: milestone.title,
+    }
+  )
+}
+
+/** Conversa de um NPC da Trilha da história. */
+export function storyDialogue(milestone: StoryMilestone, index: number, total: number): Dialogue {
+  const narrator = storyNarrator(milestone)
+  const last = index >= total - 1
+  return {
+    speaker: narrator.name,
+    role: narrator.role,
+    nodes: {
+      inicio: {
+        lines: milestone.lines,
+        choices: [{ label: 'E depois?', next: 'depois' }, { label: 'Tchau!' }],
+      },
+      depois: {
+        lines: [
+          last
+            ? 'Essa é a história até agora. O próximo capítulo ainda está sendo escrito!'
+            : 'Siga pela trilha: o próximo capítulo te espera mais adiante.',
+        ],
+        choices: [{ label: 'Ouvir de novo', next: 'inicio' }, { label: 'Tchau!' }],
+      },
+    },
+  }
+}
+
 /** Conversa do ponto de interesse, ou null se ele abre um painel comum. */
 export function dialogueFor(poi: Poi): Dialogue | null {
   if (poi.kind === 'landmark' && poi.landmark === 'templo') return FELIPE_DIALOGUE
   if (poi.kind === 'service') return serviceDialogue(poi.service)
+  if (poi.kind === 'story') return storyDialogue(poi.milestone, poi.index, poi.total)
   return null
 }

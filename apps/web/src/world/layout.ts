@@ -50,9 +50,13 @@ export interface StoryPoi {
   kind: 'story'
   id: `historia:${number}`
   index: number
+  total: number
   milestone: StoryMilestone
   label: string
+  /** Posição do NPC que conta o capítulo (ponto de interação). */
   dir: Vector3
+  /** Placa com o ano, logo atrás do NPC. */
+  signDir: Vector3
 }
 
 export type Poi = LandmarkPoi | ServicePoi | HousePoi | StoryPoi
@@ -137,7 +141,7 @@ export function layoutServices(services: Service[], center: Vector3): ServicePoi
   })
 }
 
-/** Direções reservadas (spawn, marcos, praça, placas) onde casas e props não devem ficar. */
+/** Direções reservadas (spawn, marcos, praça, história) onde casas e props não devem ficar. */
 export function reservedDirs(
   landmarks: LandmarkPoi[],
   story: StoryPoi[] = [],
@@ -146,7 +150,7 @@ export function reservedDirs(
   return [
     UP.clone(),
     ...landmarks.flatMap((l) => [l.dir, poiAnchor(l)]),
-    ...story.map((s) => s.dir),
+    ...story.flatMap((s) => [s.dir, s.signDir]),
     ...services.flatMap((s) => [s.dir, s.buildingDir]),
     ...(services[0] ? [services[0].center] : []),
   ]
@@ -156,7 +160,7 @@ export function reservedDirs(
 export const TRAIL_POLAR_DEG = 72
 const TRAIL_POLAR = (TRAIL_POLAR_DEG * Math.PI) / 180
 const TRAIL_START_AZIMUTH = 60 // entre o Templo e a Praça dos Serviços
-const TRAIL_STEP_DEG = 36 // distância angular entre placas
+const TRAIL_STEP_DEG = 36 // distância angular entre os NPCs da história
 
 /** Pedras do caminho, a cada ~2 m, dando a volta inteira. */
 export function trailDirs(): Vector3[] {
@@ -165,18 +169,26 @@ export function trailDirs(): Vector3[] {
   return Array.from({ length: n }, (_, i) => dirFromAngles(TRAIL_POLAR_DEG, (i * 360) / n))
 }
 
-/** Placas da história: nos Empties `historia_N` ou ao longo do anel. */
+/**
+ * NPCs da história: nos Empties `historia_N` ou à beira do anel, olhando
+ * para o polo norte; a placa com o ano fica logo atrás de cada um.
+ */
 export function layoutStory(story: StoryMilestone[], markers: Markers | null): StoryPoi[] {
-  return story.map((milestone, index) => ({
-    kind: 'story',
-    id: `historia:${index}`,
-    index,
-    milestone,
-    label: `${milestone.when} · ${milestone.title}`,
-    dir:
+  return story.map((milestone, index) => {
+    const dir =
       markers?.story[index] ??
-      dirFromAngles(TRAIL_POLAR_DEG + 4, TRAIL_START_AZIMUTH + index * TRAIL_STEP_DEG),
-  }))
+      dirFromAngles(TRAIL_POLAR_DEG + 3, TRAIL_START_AZIMUTH + index * TRAIL_STEP_DEG)
+    return {
+      kind: 'story',
+      id: `historia:${index}`,
+      index,
+      total: story.length,
+      milestone,
+      label: `${milestone.when} · ${milestone.title}`,
+      dir,
+      signDir: offsetDir(dir, tangentTowards(dir, UP).negate(), 1.3),
+    }
+  })
 }
 
 function awayFromTrail(p: Vector3): boolean {
