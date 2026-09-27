@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Confere os .glb em apps/web/src/assets/models/ contra o guia de arte
- * (docs/arte.md): nomes, animações, material @tint, triângulos, altura,
- * Empties do planeta e tamanho total. Sem dependências: lê o GLB na mão.
+ * Confere os .glb em apps/web/src/assets/models/ contra a direção de arte
+ * (docs/direcao-de-arte-v2.md): nomes, animações, material @tint, triângulos,
+ * materiais, tamanho das texturas, altura, Empties do planeta e tamanho total.
+ * Sem dependências: lê o GLB na mão.
  *
  *   pnpm models:check            # pasta padrão
  *   pnpm models:check <pasta>    # outra pasta (ex.: antes de copiar os arquivos)
@@ -13,22 +14,29 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 
 const DIR = resolve(process.argv[2] ?? 'apps/web/src/assets/models')
-const TOTAL_BUDGET = 5 * 1024 * 1024
+const TOTAL_BUDGET = 20 * 1024 * 1024
 const DRACO_HINT = 1024 * 1024
 
 /** Regras por arquivo (ver docs/arte.md). height = altura esperada em metros. */
 const RULES = {
-  aika: { tris: 5000, actions: ['Idle', 'Walk'], height: [1.2, 3] },
-  visitante: { tris: 5000, actions: ['Idle', 'Walk'], tint: true, height: [1.2, 3] },
-  felipe: { tris: 5000, height: [1.2, 3] },
-  npc: { tris: 5000, tint: true, height: [1.2, 3] },
-  templo: { tris: 3000, height: [3, 7] },
-  servico: { tris: 3000, tint: true, height: [2.5, 5] },
-  correio: { tris: 1500, height: [0.8, 2.2] },
-  casa: { tris: 1500, tint: true, height: [2.2, 4] },
-  arvore: { tris: 300 },
-  pedra: { tris: 300 },
-  planeta: { tris: 15000, planet: true },
+  aika: { tris: 15000, materials: 6, texture: 2048, actions: ['Idle', 'Walk'], height: [1.2, 3] },
+  visitante: {
+    tris: 15000,
+    materials: 6,
+    texture: 2048,
+    actions: ['Idle', 'Walk'],
+    tint: true,
+    height: [1.2, 3],
+  },
+  felipe: { tris: 12000, materials: 6, texture: 1024, height: [1.2, 3] },
+  npc: { tris: 12000, materials: 6, texture: 1024, tint: true, height: [1.2, 3] },
+  templo: { tris: 25000, materials: 10, texture: 2048, height: [3, 8] },
+  servico: { tris: 8000, materials: 6, texture: 1024, tint: true, height: [2.5, 5.5] },
+  correio: { tris: 2500, materials: 3, texture: 512, height: [0.8, 2.2] },
+  casa: { tris: 4000, materials: 4, texture: 1024, tint: true, height: [2.2, 4] },
+  arvore: { tris: 1500, materials: 3, texture: 512 },
+  pedra: { tris: 800, materials: 2, texture: 512 },
+  planeta: { tris: 80000, materials: 16, texture: 2048, planet: true },
 }
 
 const PLANET_EMPTIES = ['poi_templo', 'area_servicos', 'area_vila']
@@ -49,7 +57,31 @@ function parseGlb(buf) {
   if (buf.readUInt32LE(0) !== 0x46546c67) throw new Error('não é um arquivo GLB (use glTF Binary)')
   const jsonLen = buf.readUInt32LE(12)
   if (buf.readUInt32LE(16) !== 0x4e4f534a) throw new Error('primeiro chunk não é JSON')
-  return JSON.parse(buf.subarray(20, 20 + jsonLen).toString('utf8'))
+  const json = JSON.parse(buf.subarray(20, 20 + jsonLen).toString('utf8'))
+  const binStart = 20 + jsonLen + 8
+  json.__bin = buf.subarray(binStart)
+  return json
+}
+
+/** Largura × altura de uma imagem PNG ou JPEG embutida no GLB (ou null). */
+function imageSize(gltf, image) {
+  if (image.bufferView === undefined) return null
+  const view = gltf.bufferViews[image.bufferView]
+  const b = gltf.__bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength)
+  if (b[0] === 0x89 && b[1] === 0x50) return [b.readUInt32BE(16), b.readUInt32BE(20)]
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2
+    while (i < b.length - 9) {
+      if (b[i] !== 0xff) return null
+      const marker = b[i + 1]
+      const len = b.readUInt16BE(i + 2)
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]
+      }
+      i += 2 + len
+    }
+  }
+  return null
 }
 
 // --- matemática mínima de matrizes 4x4 (coluna-maior, como no glTF) ---
@@ -171,6 +203,24 @@ for (const file of files.sort()) {
         warn(`a base está em y = ${a.min[1].toFixed(2)} m: a origem deve ficar nos pés/chão`)
     }
 
+    const materials = (gltf.materials ?? []).length
+    if (rule.materials && materials > rule.materials)
+      warn(
+        `${materials} materiais (limite ${rule.materials}): junte em atlas para pesar menos no celular`,
+      )
+    const images = gltf.images ?? []
+    for (const img of images) {
+      let size = null
+      try {
+        size = imageSize(gltf, img)
+      } catch {
+        // Imagem em formato inesperado: não bloqueia a verificação.
+      }
+      if (size && rule.texture && Math.max(...size) > rule.texture)
+        warn(`textura ${size.join('×')} (máximo ${rule.texture} para este modelo)`)
+    }
+    if (images.length) ok(`${images.length} textura(s), ${materials} material(is)`)
+
     if (rule.actions) {
       const actions = (gltf.animations ?? []).map((x) => x.name)
       const missing = rule.actions.filter((x) => !actions.includes(x))
@@ -223,7 +273,7 @@ for (const file of files.sort()) {
 }
 
 const mb = (total / 1024 / 1024).toFixed(2)
-if (total > TOTAL_BUDGET) err(`total ${mb} MB passa do limite de 5 MB`)
-else console.log(`Total: ${mb} MB de 5 MB`)
+if (total > TOTAL_BUDGET) err(`total ${mb} MB passa do limite de 20 MB`)
+else console.log(`Total: ${mb} MB de 20 MB`)
 console.log(`\n${errors} erro(s), ${warnings} aviso(s)`)
 process.exit(errors > 0 ? 1 : 0)

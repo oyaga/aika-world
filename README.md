@@ -53,7 +53,9 @@ aika-world/
 │   └── server/                 # Cloudflare Worker + Durable Object `World` (salas multiplayer)
 ├── packages/shared/            # Tipos: WorldData, RepoHouse, mensagens do protocolo
 ├── scripts/generate-world.mjs  # Gera world.json a partir da API do GitHub
-├── docs/arte.md                # Guia para modelar e exportar do Blender
+├── docs/direcao-de-arte-v2.md  # Direção de arte atual (para o agente/designer 3D)
+├── docs/referencias/           # Imagens de referência do estilo
+├── docs/arte.md                # Contrato técnico dos modelos (nomes, Empties, exportação)
 ├── docs/deploy.md              # Como colocar no ar (Cloudflare + GitHub Actions)
 ├── scripts/check-models.mjs    # Confere os .glb (nomes, animações, triângulos, tamanho)
 └── .github/workflows/ci.yml    # install → typecheck → lint → build

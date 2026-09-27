@@ -1,5 +1,9 @@
 # Guia de arte — modelos no Blender
 
+> **Estilo e limites atualizados em [`direcao-de-arte-v2.md`](direcao-de-arte-v2.md)** (mistura
+> Messenger + planeta-templo neon, limites maiores, texturas pintadas). Este guia continua valendo
+> para o contrato técnico (nomes, Empties, sufixos, exportação).
+
 Como modelar e exportar os `.glb` para que eles entrem no mundo sem ajustes no código.
 
 ## Onde colocar os arquivos
