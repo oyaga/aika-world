@@ -10,7 +10,7 @@ import {
   Quaternion,
   Vector3,
 } from 'three'
-import { type ModelName, modelUrl } from '../lib/models'
+import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
 import {
   angleBetween,
   mulberry32,
@@ -122,7 +122,7 @@ interface Part {
 
 /** Um InstancedMesh por mesh do .glb, com a origem do modelo no chão. */
 function InstancedGlb({ url, items }: { url: string; items: Placement[] }) {
-  const { scene } = useGLTF(url)
+  const { scene } = useGLTF(url, DRACO_PATH)
   const parts = useMemo(() => {
     const out: Part[] = []
     scene.updateMatrixWorld(true)

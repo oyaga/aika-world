@@ -99,6 +99,10 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
   um com uma placa do ano atrás. Posicione-os com os Empties `historia_N`; sem eles, o código
   usa um anel a cerca de 75° do polo norte.
 - Mantenha a superfície andável entre **19 e 21 m** do centro.
+- **Chão × decoração:** só são pisáveis os objetos cujo nome começa com `terreno`, `trilha`,
+  `chao`, `laje`, `ponte` ou `piso`. Todo o resto (árvores, pedras, rochas flutuantes, cachoeira)
+  é decoração: o personagem passa por dentro sem subir nele. Para impedir a passagem, use um
+  `bloqueio_*` em volta.
 - A decoração fixa (árvores, pedras, cercas) pode ser modelada direto no planeta. Com
   `planeta.glb`, o código não espalha as árvores e pedras de primitivas.
 
@@ -167,7 +171,8 @@ File → Export → **glTF 2.0**:
 - Transform: **+Y Up** marcado
 - Mesh: **Apply Modifiers**
 - Não exporte câmeras nem luzes.
-- Compressão: marque **Compression** (Draco) se o arquivo passar de 1 MB. O site já sabe ler.
+- Compressão: marque **Compression** (Draco) se o arquivo passar de 1 MB. O site já sabe ler (o
+  decodificador fica em `apps/web/public/draco/`, sem depender de CDN).
 
 ## Blender MCP (opcional)
 

@@ -1,5 +1,5 @@
 import { type Mesh, Raycaster, Vector3 } from 'three'
-import { PLANET_RADIUS } from '../lib/sphere'
+import { offsetDir, PLANET_RADIUS, tangentTowards } from '../lib/sphere'
 import { proceduralGround, proceduralWater } from './lakes'
 
 /**
@@ -55,4 +55,17 @@ export function isBlocked(dir: Vector3): boolean {
 /** true quando o terreno vem do `planeta.glb` (e não do planeta procedural). */
 export function hasTerrainModel(): boolean {
   return modelLoaded
+}
+
+const probe = new Vector3()
+
+/** true se há água no ponto ou a até `margin` metros dele (amostra 8 direções). */
+export function nearWater(dir: Vector3, margin: number): boolean {
+  if (waterRadius(dir) !== null) return true
+  const north = tangentTowards(dir, probe.set(0, 1, 0))
+  for (let i = 0; i < 8; i++) {
+    const heading = north.clone().applyAxisAngle(dir, (i / 8) * Math.PI * 2)
+    if (waterRadius(offsetDir(dir, heading, margin)) !== null) return true
+  }
+  return false
 }

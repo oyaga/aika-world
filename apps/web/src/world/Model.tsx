@@ -1,8 +1,8 @@
-import { Component, type ReactNode, Suspense, useMemo } from 'react'
-import { useGLTF } from '@react-three/drei'
+import { Component, type ReactNode, Suspense, useEffect, useMemo } from 'react'
+import { useAnimations, useGLTF } from '@react-three/drei'
 import type { Object3D } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { type ModelName, modelUrl } from '../lib/models'
+import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
 import { toonify } from './materials'
 
 interface BoundaryProps {
@@ -29,14 +29,30 @@ export class ModelBoundary extends Component<BoundaryProps, { failed: boolean }>
 
 /** Cópia independente da cena do glTF, já com materiais cartoon. */
 export function useModelClone(url: string, tint?: string): Object3D {
-  const { scene } = useGLTF(url)
+  const { scene } = useGLTF(url, DRACO_PATH)
   return useMemo(() => toonify(cloneSkinned(scene), tint), [scene, tint])
 }
 
 type Scale = [number, number, number]
 
-function Glb({ url, tint, scale }: { url: string; tint?: string; scale?: Scale }) {
+interface GlbProps {
+  url: string
+  tint?: string
+  scale?: Scale
+  animation?: string
+}
+
+function Glb({ url, tint, scale, animation }: GlbProps) {
   const object = useModelClone(url, tint)
+  const { animations } = useGLTF(url, DRACO_PATH)
+  const { actions } = useAnimations(animations, object)
+  useEffect(() => {
+    const action = animation ? actions[animation] : undefined
+    action?.reset().play()
+    return () => {
+      action?.stop()
+    }
+  }, [actions, animation])
   return <primitive object={object} scale={scale ?? [1, 1, 1]} />
 }
 
@@ -48,15 +64,17 @@ interface ModelProps {
   tint?: string
   /** Escala aplicada só ao .glb (a forma simples já tem o tamanho certo). */
   scale?: Scale
+  /** Ação do .glb tocada em loop, se existir (ex.: `Idle` dos NPCs). */
+  animation?: string
 }
 
-export function Model({ name, fallback, tint, scale }: ModelProps) {
+export function Model({ name, fallback, tint, scale, animation }: ModelProps) {
   const url = modelUrl(name)
   if (!url) return <>{fallback}</>
   return (
     <ModelBoundary fallback={fallback}>
       <Suspense fallback={fallback}>
-        <Glb url={url} tint={tint} scale={scale} />
+        <Glb url={url} tint={tint} scale={scale} animation={animation} />
       </Suspense>
     </ModelBoundary>
   )

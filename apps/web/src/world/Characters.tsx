@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import type { Group } from 'three'
-import { type ModelName, modelUrl } from '../lib/models'
+import { type ModelName, modelUrl, DRACO_PATH } from '../lib/models'
 import { useStore } from '../state/store'
 import { Toon } from './materials'
 import { ModelBoundary, useModelClone } from './Model'
@@ -189,7 +189,7 @@ const OPTIONAL_ACTIONS = ['Idle', 'Walk', 'Run', 'Jump', 'Swim'] as const
  */
 function AnimatedGlb({ url, motion, tint }: { url: string; motion: Motion; tint?: string }) {
   const root = useModelClone(url, tint)
-  const { animations } = useGLTF(url)
+  const { animations } = useGLTF(url, DRACO_PATH)
   const { actions, names } = useAnimations(animations, root)
   const reducedMotion = useStore((s) => s.reducedMotion)
 

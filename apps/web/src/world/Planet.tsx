@@ -25,6 +25,8 @@ const DEFAULT_VILA_RADIUS = 12 // metros
 /**
  * Planeta: `planeta.glb` quando existir, senão a esfera procedural.
  * Convenções de nomes no Blender (ver docs/arte.md):
+ * - `terreno*`, `trilha*`, `chao*`, `laje*`, `ponte*`, `piso*` → chão (onde se pisa);
+ *   todo o resto é decoração, atravessável;
  * - `bloqueio_*`  → mesh invisível onde não se anda;
  * - `agua_*`      → superfície da água (lagos): dá para entrar, pular e nadar;
  * - `poi_templo`, `poi_correio` → Empty com a posição do marco (sem `poi_correio`,
@@ -46,6 +48,19 @@ export function Planet() {
   )
 }
 
+/** Prefixos de objetos em que dá para pisar; o resto (árvores, rochas, cachoeira…) é só decoração. */
+const WALKABLE = /^(terreno|trilha|chao|laje|ponte|piso)/
+
+function meshKind(mesh: Object3D, root: Object3D): 'bloqueio' | 'agua' | 'chao' | 'decoracao' {
+  for (let o: Object3D | null = mesh; o && o !== root; o = o.parent) {
+    const n = o.name.toLowerCase()
+    if (n.startsWith('bloqueio_')) return 'bloqueio'
+    if (n.startsWith('agua_')) return 'agua'
+    if (WALKABLE.test(n)) return 'chao'
+  }
+  return 'decoracao'
+}
+
 const tmpPos = new Vector3()
 const tmpQuat = new Quaternion()
 
@@ -63,17 +78,14 @@ function readMarkers(root: Object3D): {
   root.traverse((obj) => {
     const name = obj.name.toLowerCase()
     const mesh = obj as Mesh
-    if (name.startsWith('bloqueio_')) {
-      if (mesh.isMesh) blockers.push(mesh)
-      obj.visible = false
-      return
-    }
-    if (name.startsWith('agua_')) {
-      if (mesh.isMesh) water.push(mesh)
-      return
-    }
     if (mesh.isMesh) {
-      ground.push(mesh)
+      // Malhas com vários materiais viram filhos do objeto do Blender: vale o nome dele.
+      const kind = meshKind(mesh, root)
+      if (kind === 'bloqueio') {
+        blockers.push(mesh)
+        mesh.visible = false
+      } else if (kind === 'agua') water.push(mesh)
+      else if (kind === 'chao') ground.push(mesh)
       return
     }
     obj.getWorldPosition(tmpPos)

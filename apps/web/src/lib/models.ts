@@ -31,3 +31,9 @@ for (const [path, url] of Object.entries(found)) {
 export function modelUrl(name: ModelName): string | undefined {
   return urls.get(name)
 }
+
+/**
+ * Decodificador Draco hospedado junto com o site (public/draco), em vez do
+ * CDN padrão do drei: funciona offline e não depende de terceiros.
+ */
+export const DRACO_PATH = `${import.meta.env.BASE_URL}draco/`

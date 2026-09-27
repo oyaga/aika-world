@@ -106,7 +106,12 @@ export function Npc({ dir, lookAt, name, look, model }: NpcProps) {
     <>
       <group position={position} quaternion={quaternion}>
         <group ref={body}>
-          <Model name={model} tint={look.outfit} fallback={<NpcPlaceholder {...look} />} />
+          <Model
+            name={model}
+            tint={look.outfit}
+            animation="Idle"
+            fallback={<NpcPlaceholder {...look} />}
+          />
         </group>
       </group>
       <Label position={labelPos} text={`💬 ${name}`} />

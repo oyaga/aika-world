@@ -3,3 +3,4 @@ dist
 pnpm-lock.yaml
 apps/web/public/world.json
 docs/*.png
+apps/web/public/draco

@@ -3,6 +3,7 @@ import type { RepoHouse, WorldData } from '@aika-world/shared'
 import type { Service, StoryMilestone } from '../content'
 import type { Markers } from '../state/store'
 import { lakeNear, SHORE } from './lakes'
+import { hasTerrainModel, nearWater } from './terrain'
 import {
   angleBetween,
   dirFromAngles,
@@ -222,8 +223,12 @@ export function layoutStory(story: StoryMilestone[], markers: Markers | null): S
   })
 }
 
-/** Longe da trilha e dos lagos (casas não ficam no caminho nem dentro d'água). */
+/**
+ * Lugar livre para uma casa: fora d'água (com folga) e, no planeta
+ * procedural, fora do anel da trilha.
+ */
 function awayFromTrail(p: Vector3): boolean {
+  if (hasTerrainModel()) return !nearWater(p, 2.5)
   return (
     Math.abs(Math.acos(Math.max(-1, Math.min(1, p.y))) - TRAIL_POLAR) > 0.18 &&
     !lakeNear(p, SHORE + 2.5)
