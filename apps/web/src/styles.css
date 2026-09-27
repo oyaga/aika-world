@@ -1008,3 +1008,10 @@ button {
     border-width: 3px 0 0;
   }
 }
+
+/* Tela estreita: os botões do topo ocupam a largura; o título (decorativo) sai */
+@media (max-width: 480px) {
+  .hud {
+    display: none;
+  }
+}
