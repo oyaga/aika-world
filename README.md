@@ -1,20 +1,27 @@
 # Aika World 🪐
 
-Um portfólio em 3D: um pequeno planeta onde a personagem **Aika** caminha entre prédios e casinhas.
-Cada casinha é um repositório do GitHub de [@oyaga](https://github.com/oyaga); os prédios maiores
-contam quem está por trás deles (Sobre, Serviços e Contato). Inspirado em
+O planeta de **Felipe Kenji "Nakamura"** em 3D: seus projetos, serviços e história, com a
+**Aika**, a agente de IA criada por ele, como guia. Cada casinha é um repositório do GitHub de
+[@oyaga](https://github.com/oyaga). No templo japonês, o Felipe dá as boas-vindas e explica o mundo, e a
+caixa de correio ao lado reúne todos os contatos; na Praça dos Serviços, um NPC na porta de cada prédio explica o serviço; e, na Trilha da história, o Felipe de cada época conta um capítulo da vida
+dele.
+Inspirado em
 [messenger.abeto.co](https://messenger.abeto.co/).
 
 ![Captura de tela do protótipo](docs/screenshot.png)
 
 ## Como jogar
 
-| Ação                   | Teclado              | Toque                     |
-| ---------------------- | -------------------- | ------------------------- |
-| Andar para frente/trás | `W` / `S` ou `↑` `↓` | Joystick (canto inferior) |
-| Virar                  | `A` / `D` ou `←` `→` | Joystick                  |
-| Interagir              | `E`                  | Botão "Toque para abrir"  |
-| Fechar painel          | `Esc`                | ✕ no painel               |
+| Ação                   | Teclado              | Toque                         |
+| ---------------------- | -------------------- | ----------------------------- |
+| Andar para frente/trás | `W` / `S` ou `↑` `↓` | Joystick (canto inferior)     |
+| Virar                  | `A` / `D` ou `←` `→` | Joystick                      |
+| Correr                 | `Shift` (segurado)   | Botão "Correr" (liga/desliga) |
+| Pular                  | `Espaço`             | Botão "Pular"                 |
+| Nadar                  | entre num lago fundo | entre num lago fundo          |
+| Interagir / conversar  | `E`                  | Botão "Falar" / "Abrir"       |
+| Emotes                 | `1`–`4`              | Botões 👋 🎉 ❤️ 😂 no arco    |
+| Fechar painel          | `Esc`                | ✕ no painel                   |
 
 O botão **Versão simples** (canto superior direito) mostra todo o conteúdo em uma lista HTML
 acessível, sem 3D. A animação respeita `prefers-reduced-motion`.
@@ -36,14 +43,21 @@ aika-world/
 │   ├── web/                    # Cliente 3D (Vite + React + R3F)
 │   │   ├── public/world.json   # Dados do mundo (gerado por `pnpm world`)
 │   │   └── src/
-│   │       ├── world/          # Planet, Player, Aika, Houses, Landmarks, Props, CameraRig...
+│   │       ├── world/          # Planet, Player, Companion (Aika), Characters, Houses, NPCs, CameraRig...
 │   │       ├── ui/             # Panel, Hint, Joystick, Loading, SimpleView
 │   │       ├── state/          # store (zustand), entrada, estado do jogador
 │   │       ├── lib/sphere.ts   # Matemática na esfera (quaternions, Fibonacci, RNG)
-│   │       └── content.tsx     # Textos das seções (pt-BR)
-│   └── server/                 # Cloudflare Worker (/health) + Durable Object `World` (stub)
+│   │       ├── lib/models.ts   # Descobre os .glb disponíveis
+│   │       ├── assets/models/  # Modelos .glb do Blender (ver docs/arte.md)
+│   │       └── content.tsx     # Textos (na voz da Aika), serviços, contatos e a Trilha da história
+│   └── server/                 # Cloudflare Worker + Durable Object `World` (salas multiplayer)
 ├── packages/shared/            # Tipos: WorldData, RepoHouse, mensagens do protocolo
 ├── scripts/generate-world.mjs  # Gera world.json a partir da API do GitHub
+├── docs/direcao-de-arte-v2.md  # Direção de arte atual (para o agente/designer 3D)
+├── docs/referencias/           # Imagens de referência do estilo
+├── docs/arte.md                # Contrato técnico dos modelos (nomes, Empties, exportação)
+├── docs/deploy.md              # Como colocar no ar (Cloudflare + GitHub Actions)
+├── scripts/check-models.mjs    # Confere os .glb (nomes, animações, triângulos, tamanho)
 └── .github/workflows/ci.yml    # install → typecheck → lint → build
 ```
 
@@ -57,13 +71,29 @@ pnpm dev          # abre o cliente em http://localhost:5173
 pnpm typecheck    # checagem de tipos em todos os pacotes
 pnpm lint         # ESLint
 pnpm build        # build de produção (apps/web/dist)
+pnpm models:check # confere os .glb contra o guia de arte (docs/arte.md)
 ```
 
-Servidor (opcional, ainda é só um esqueleto):
+### Multiplayer (opcional)
+
+Sem servidor, o planeta funciona sozinho. Para ver outros visitantes ao vivo:
 
 ```bash
-pnpm --filter @aika-world/server dev   # wrangler dev → GET /health responde "ok"
+pnpm --filter @aika-world/server dev     # servidor local em http://localhost:8787
+cp apps/web/.env.example apps/web/.env    # e descomente VITE_WORLD_URL=ws://localhost:8787/world
+pnpm dev                                  # abra em duas abas para se ver andando
+pnpm --filter @aika-world/server smoke    # teste de fumaça do protocolo (com o servidor rodando)
 ```
+
+Publicando: um único Worker da Cloudflare serve o site e o multiplayer no mesmo endereço, com
+deploy automático pelo GitHub Actions. Passo a passo em [`docs/deploy.md`](docs/deploy.md)
+(`pnpm preview:prod` roda igual à produção em http://localhost:8787).
+
+Como funciona: cada sala é um Durable Object `World` com WebSockets em modo de hibernação
+(conexões paradas não custam nada). O servidor dá a cada visitante um nome ("Viajante #427") e uma
+cor, repassa só a orientação (quaternion) e a velocidade de cada um, valida tudo o que chega e
+limita mensagens por conexão. Cabem 50 visitantes por sala; acima disso o cliente vai para a
+próxima (até 5). O protocolo fica em `packages/shared/src/protocol.ts`.
 
 ### Gerando o mundo a partir do GitHub
 
@@ -80,18 +110,43 @@ quatro casas secretas.
 
 ## Como funciona
 
-- **Caminhar na esfera**: a orientação da Aika é um único quaternion. O "up" local é a normal da
+- **Caminhar na esfera**: o visitante (um Viajante com roupa de cor sorteada) é controlado pelo
+  teclado ou joystick; sua orientação é um único quaternion. O "up" local é a normal da
   superfície e a posição é sempre `up × raio` (gravidade implícita, sem física). Andar é uma
   rotação em torno do eixo X local; virar, em torno do Y local.
 - **Câmera**: terceira pessoa, atrás e acima no referencial local, suavizada com `lerp`/`slerp`.
 - **Casas**: distribuídas com uma esfera de Fibonacci; altura por `log(estrelas + 1)` + atividade
   recente; cor pela linguagem.
+- **Pular, correr e nadar**: sem biblioteca de física. A gravidade puxa para o centro do planeta
+  (`world/locomotion.ts`); Espaço pula, Shift corre (no celular: joystick à esquerda e botões em
+  arco à direita — Pular, Correr, Falar e emotes) e, na água funda dos lagos, o personagem nada e respinga ao cair. Os lagos do planeta
+  procedural ficam em `world/lakes.ts`; com `planeta.glb`, são os meshes `agua_*`.
+- **Aika, a guia**: anda ao lado do visitante (acelera quando fica para trás), fala o nome e a
+  descrição de cada repositório quando ele chega perto e, de tempos em tempos, solta um
+  comentário aleatório num balão sobre a cabeça. As falas ficam em `src/guide.ts`.
+- **NPCs e conversas**: `src/dialogues.ts` define as conversas como pequenos grafos (falas +
+  opções de resposta); a do Felipe é escrita à mão e as dos serviços e da história são geradas a
+  partir de `SERVICES` e `STORY` em `content.tsx`. A caixa de diálogo digita as falas, aceita E/Espaço/Enter para
+  avançar e 1–9 para escolher. Os NPCs se viram para o visitante quando ele chega perto.
 - **Árvores e pedras**: posicionamento determinístico (RNG com semente) e `InstancedMesh`.
+- **Visual (direção de arte v2)**: contorno de tinta por casca invertida com normais suavizadas
+  (`addOutlines` em `world/materials.tsx`), sombreamento cartoon em 2 tons com sombra turquesa (luz
+  de hemisfério), céu em degradê da "hora azul" e sol que acompanha o visitante
+  (`world/Atmosphere.tsx`), e bloom só nos emissivos (`world/Effects.tsx`, materiais `@unlit`
+  multiplicados por `GLOW`).
+- **Guarda-roupa**: botão "👕 Visual" abre a tela de personagem (peças por categoria e cores);
+  o visual fica salvo no navegador e vai pela rede para os outros visitantes. `Wave` toca no emote
+  👋 e os NPCs usam `Talk` durante a conversa.
+- **Modelos 3D**: cada `.glb` em `apps/web/src/assets/models/` substitui a forma simples
+  correspondente (com fallback se faltar ou falhar) e ganha materiais cartoon. Com `planeta.glb`,
+  os personagens seguem o relevo e os Empties `poi_*`, `area_vila` e `bloqueio_*` definem marcos, vila e
+  barreiras. Detalhes em [`docs/arte.md`](docs/arte.md).
 
 ## Roadmap
 
-1. **Protótipo** ✅ — planeta, Aika andando, câmera, pontos de interesse, painéis, versão simples.
-2. **Multiplayer** — Cloudflare Durable Objects + WebSocket para ver outros visitantes andando.
+1. **Protótipo** ✅ — planeta, visitante andando com a Aika de guia, câmera, pontos de interesse, painéis, versão simples.
+2. **Multiplayer** ✅ — Cloudflare Durable Objects + WebSocket: visitantes ao vivo, nomes, cores e
+   emotes. Deploy pronto (falta configurar a conta Cloudflare, ver docs/deploy.md).
 3. **Commits ao vivo** — GitHub App enviando eventos de push; casas reagem em tempo real.
-4. **Arte** — modelos no Blender (Aika em `.glb` com animações) e shader cartoon próprio.
+4. **Arte** 🚧 — carregamento dos `.glb` pronto; modelos no Blender (Aika em `.glb` com animações) e shader cartoon próprio.
 5. **Conteúdo e acabamento** — textos finais, versão 2D completa, som, SEO e performance.

@@ -1,0 +1,56 @@
+name: Deploy
+
+# Publica o site + servidor multiplayer (um Worker da Cloudflare) a cada push na main.
+# Precisa dos secrets CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID (ver docs/deploy.md);
+# WORLD_GITHUB_TOKEN é opcional (inclui repositórios privados, anonimizados).
+# Sem eles, o job termina sem publicar nada.
+
+on:
+  push:
+    branches: [main]
+  # Uma vez por dia, para as casas acompanharem os repositórios (até os commits ao vivo chegarem).
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Verificar secrets
+        id: secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Secrets da Cloudflare não configurados; pulando o deploy (ver docs/deploy.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+      - uses: pnpm/action-setup@v4
+        if: steps.secrets.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.secrets.outputs.ready == 'true'
+      - run: pnpm models:check
+        if: steps.secrets.outputs.ready == 'true'
+      - name: Atualizar as casas com os repositórios do GitHub
+        if: steps.secrets.outputs.ready == 'true'
+        # Sem WORLD_GITHUB_TOKEN: só repositórios públicos. Com ele: privados também, anonimizados.
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORLD_GITHUB_TOKEN }}
+        run: pnpm world || echo "::warning::Não foi possível atualizar o world.json; usando o do repositório."
+      - run: pnpm release
+        if: steps.secrets.outputs.ready == 'true'

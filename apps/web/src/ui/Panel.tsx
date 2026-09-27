@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { SECTIONS } from '../content'
 import { useStore } from '../state/store'
 import { poiTitle, type Poi } from '../world/layout'
+import { dialogueFor } from '../dialogues'
+import { DialogueBox } from './DialogueBox'
 import { RepoDetails } from './RepoDetails'
 
 /** Painel HTML (fora do canvas) com o conteúdo do ponto de interesse aberto. */
@@ -10,12 +12,14 @@ export function Panel({ pois }: { pois: Poi[] }) {
   const close = useStore((s) => s.close)
   const closeBtn = useRef<HTMLButtonElement>(null)
   const poi = pois.find((p) => p.id === openPoi)
+  const dialogue = poi ? dialogueFor(poi) : null
 
   useEffect(() => {
-    if (poi) closeBtn.current?.focus()
-  }, [poi])
+    if (poi && !dialogue) closeBtn.current?.focus()
+  }, [poi, dialogue])
 
   if (!poi) return null
+  if (dialogue) return <DialogueBox key={poi.id} dialogue={dialogue} />
   const title = poi.kind === 'landmark' ? SECTIONS[poi.id].title : poiTitle(poi)
 
   return (
@@ -40,7 +44,8 @@ export function Panel({ pois }: { pois: Poi[] }) {
           </button>
         </header>
         <div className="panel__body">
-          {poi.kind === 'landmark' ? SECTIONS[poi.id].body : <RepoDetails house={poi.house} />}
+          {poi.kind === 'landmark' && SECTIONS[poi.id].body}
+          {poi.kind === 'house' && <RepoDetails house={poi.house} />}
         </div>
         <footer className="panel__footer">
           <kbd>Esc</kbd> para fechar

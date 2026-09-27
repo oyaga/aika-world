@@ -5,7 +5,7 @@ import globals from 'globals'
 import prettier from 'eslint-config-prettier'
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/.wrangler/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/.wrangler/**', '**/public/draco/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -17,7 +17,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.mjs', '*.js'],
+    files: ['scripts/**/*.mjs', '**/scripts/**/*.mjs', '*.js'],
     languageOptions: { globals: globals.node },
   },
   {

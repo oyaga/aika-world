@@ -105,3 +105,25 @@ export function faceTowards(normal: Vector3, target: Vector3): Quaternion {
   basisM.makeBasis(x, y, z)
   return new Quaternion().setFromRotationMatrix(basisM)
 }
+
+/** Tangente unitária em `at` apontando para `target` (ou um eixo qualquer, se degenerado). */
+export function tangentTowards(at: Vector3, target: Vector3): Vector3 {
+  const t = target.clone().sub(at.clone().multiplyScalar(target.dot(at)))
+  if (t.lengthSq() > 1e-8) return t.normalize()
+  const helper = Math.abs(at.x) < 0.9 ? new Vector3(1, 0, 0) : new Vector3(0, 0, 1)
+  return helper.sub(at.clone().multiplyScalar(helper.dot(at))).normalize()
+}
+
+/** Direção a `distance` metros de `from`, andando pela superfície no rumo `heading`. */
+export function offsetDir(
+  from: Vector3,
+  heading: Vector3,
+  distance: number,
+  radius = PLANET_RADIUS,
+): Vector3 {
+  const axis = new Vector3().crossVectors(from, heading).normalize()
+  return from
+    .clone()
+    .applyAxisAngle(axis, distance / radius)
+    .normalize()
+}

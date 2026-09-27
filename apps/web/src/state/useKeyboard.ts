@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { EMOTES } from '@aika-world/shared'
+import { sendEmote } from '../net/multiplayer'
 import { input } from './input'
 import { useStore } from './store'
 
@@ -7,7 +9,7 @@ const BACK = new Set(['KeyS', 'ArrowDown'])
 const LEFT = new Set(['KeyA', 'ArrowLeft'])
 const RIGHT = new Set(['KeyD', 'ArrowRight'])
 
-/** Teclado: WASD/setas para andar, E para interagir, Esc para fechar. */
+/** Teclado: WASD/setas andam, Shift corre, Espaço pula, E interage, 1–4 emotes, Esc fecha. */
 export function useKeyboard() {
   useEffect(() => {
     const pressed = new Set<string>()
@@ -24,11 +26,27 @@ export function useKeyboard() {
       if (isTyping(e.target)) return
       const store = useStore.getState()
       if (e.code === 'Escape') {
-        if (store.openPoi) store.close()
+        if (store.wardrobeOpen) store.setWardrobeOpen(false)
+        else if (store.openPoi) store.close()
         else if (store.simpleView) store.toggleSimpleView()
         return
       }
-      if (store.simpleView) return
+      if (store.simpleView || store.wardrobeOpen) return
+      const digit = /^Digit([1-9])$/.exec(e.code)?.[1]
+      const emote = digit ? EMOTES[Number(digit) - 1] : undefined
+      if (emote && !store.openPoi && !e.repeat) {
+        sendEmote(emote)
+        return
+      }
+      if (e.code === 'Space' && !store.openPoi) {
+        e.preventDefault()
+        if (!e.repeat) input.jumpQueued = true
+        return
+      }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        input.keyRun = true
+        return
+      }
       if (e.code === 'KeyE' && !e.repeat) {
         if (store.openPoi) store.close()
         else if (store.nearPoi) store.open(store.nearPoi)
@@ -41,10 +59,12 @@ export function useKeyboard() {
       }
     }
     const onUp = (e: KeyboardEvent) => {
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.keyRun = false
       pressed.delete(e.code)
       sync()
     }
     const onBlur = () => {
+      input.keyRun = false
       pressed.clear()
       sync()
     }
