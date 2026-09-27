@@ -1,11 +1,13 @@
 import { type JSX, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Mesh } from 'three'
-import { faceTowards, PLANET_RADIUS, UP } from '../lib/sphere'
+import { faceTowards, UP } from '../lib/sphere'
 import { useStore } from '../state/store'
 import { Label } from './Label'
-import { LANDMARKS, type LandmarkKind, type LandmarkPoi } from './layout'
+import type { LandmarkKind, LandmarkPoi } from './layout'
 import { Toon } from './materials'
+import { Model } from './Model'
+import { surfaceRadius } from './terrain'
 
 function Templo() {
   const columns: [number, number][] = [
@@ -92,37 +94,37 @@ function Torre() {
   )
 }
 
-const MODELS: Record<LandmarkKind, () => JSX.Element> = {
+const PLACEHOLDERS: Record<LandmarkKind, () => JSX.Element> = {
   templo: Templo,
   oficina: Oficina,
   torre: Torre,
 }
 
 function Landmark({ poi }: { poi: LandmarkPoi }) {
-  const Model = MODELS[poi.landmark]
-  const { position, quaternion, labelPos } = useMemo(
-    () => ({
-      position: poi.dir.clone().multiplyScalar(PLANET_RADIUS),
-      // Vira o prédio para o polo norte (spawn), de frente para a Aika.
-      quaternion: faceTowards(poi.dir, UP),
-      labelPos: poi.dir.clone().multiplyScalar(PLANET_RADIUS + 5),
-    }),
-    [poi],
-  )
+  const Placeholder = PLACEHOLDERS[poi.landmark]
+  const { position, quaternion, labelPos } = useMemo(() => {
+    const ground = surfaceRadius(poi.dir)
+    return {
+      position: poi.dir.clone().multiplyScalar(ground),
+      // Sem Empty girado, o prédio olha para o polo norte (spawn).
+      quaternion: faceTowards(poi.dir, poi.forward ?? UP),
+      labelPos: poi.dir.clone().multiplyScalar(ground + 5),
+    }
+  }, [poi])
   return (
     <>
       <group position={position} quaternion={quaternion}>
-        <Model />
+        <Model name={poi.landmark} fallback={<Placeholder />} />
       </group>
       <Label position={labelPos} text={poi.label} />
     </>
   )
 }
 
-export function Landmarks() {
+export function Landmarks({ landmarks }: { landmarks: LandmarkPoi[] }) {
   return (
     <>
-      {LANDMARKS.map((poi) => (
+      {landmarks.map((poi) => (
         <Landmark key={poi.id} poi={poi} />
       ))}
     </>

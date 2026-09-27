@@ -1,7 +1,15 @@
 import { create } from 'zustand'
+import type { Vector3 } from 'three'
 import type { WorldData } from '@aika-world/shared'
+import type { LandmarkKind } from '../world/layout'
 
 export type PoiId = string
+
+/** Posições lidas dos Empties do `planeta.glb` (`poi_*`, `area_vila`). */
+export interface Markers {
+  landmarks: Partial<Record<LandmarkKind, { dir: Vector3; forward: Vector3 | null }>>
+  vila: { dir: Vector3; radius: number } | null
+}
 
 interface AppState {
   world: WorldData | null
@@ -12,11 +20,14 @@ interface AppState {
   openPoi: PoiId | null
   simpleView: boolean
   reducedMotion: boolean
+  /** null até o `planeta.glb` carregar (ou para sempre, sem ele). */
+  markers: Markers | null
   loadWorld: () => Promise<void>
   setNearPoi: (id: PoiId | null) => void
   open: (id: PoiId) => void
   close: () => void
   toggleSimpleView: () => void
+  setMarkers: (markers: Markers) => void
 }
 
 const prefersReducedMotion = (): boolean =>
@@ -31,6 +42,7 @@ export const useStore = create<AppState>((set, get) => ({
   openPoi: null,
   simpleView: false,
   reducedMotion: prefersReducedMotion(),
+  markers: null,
   loadWorld: async () => {
     if (get().world) return
     try {
@@ -53,6 +65,7 @@ export const useStore = create<AppState>((set, get) => ({
   open: (id) => set({ openPoi: id }),
   close: () => set({ openPoi: null }),
   toggleSimpleView: () => set((s) => ({ simpleView: !s.simpleView, openPoi: null })),
+  setMarkers: (markers) => set({ markers }),
 }))
 
 if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {

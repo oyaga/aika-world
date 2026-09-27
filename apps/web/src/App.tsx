@@ -7,7 +7,7 @@ import { Joystick } from './ui/Joystick'
 import { Loading } from './ui/Loading'
 import { Panel } from './ui/Panel'
 import { SimpleView } from './ui/SimpleView'
-import { layoutHouses, LANDMARKS, type Poi } from './world/layout'
+import { layoutHouses, resolveLandmarks, type Poi } from './world/layout'
 import { Scene } from './world/Scene'
 
 export function App() {
@@ -23,8 +23,13 @@ export function App() {
   }, [loadWorld])
   useKeyboard()
 
-  const houses = useMemo(() => layoutHouses(world), [world])
-  const pois = useMemo<Poi[]>(() => [...LANDMARKS, ...houses], [houses])
+  const markers = useStore((s) => s.markers)
+  const landmarks = useMemo(() => resolveLandmarks(markers), [markers])
+  const houses = useMemo(
+    () => layoutHouses(world, landmarks, markers?.vila ?? null),
+    [world, landmarks, markers],
+  )
+  const pois = useMemo<Poi[]>(() => [...landmarks, ...houses], [landmarks, houses])
 
   return (
     <>
@@ -37,7 +42,7 @@ export function App() {
             gl={{ antialias: true, powerPreference: 'high-performance' }}
           >
             <Suspense fallback={null}>
-              <Scene houses={houses} pois={pois} onReady={onReady} />
+              <Scene landmarks={landmarks} houses={houses} pois={pois} onReady={onReady} />
             </Suspense>
           </Canvas>
         )}

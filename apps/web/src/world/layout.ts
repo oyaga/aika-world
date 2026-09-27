@@ -1,6 +1,7 @@
 import type { Vector3 } from 'three'
 import type { RepoHouse, WorldData } from '@aika-world/shared'
-import { angleBetween, dirFromAngles, fibonacciSphere, UP } from '../lib/sphere'
+import type { Markers } from '../state/store'
+import { angleBetween, dirFromAngles, fibonacciSphere, PLANET_RADIUS, UP } from '../lib/sphere'
 
 export type LandmarkKind = 'templo' | 'oficina' | 'torre'
 
@@ -10,6 +11,8 @@ export interface LandmarkPoi {
   landmark: LandmarkKind
   label: string
   dir: Vector3
+  /** Para onde o prédio olha (vem do Empty); null = de frente para o spawn. */
+  forward?: Vector3 | null
 }
 
 export interface HousePoi {
@@ -50,39 +53,81 @@ export const LANDMARKS: LandmarkPoi[] = [
   },
 ]
 
+/** Marcos com as posições dos Empties `poi_*` do planeta, quando existirem. */
+export function resolveLandmarks(markers: Markers | null): LandmarkPoi[] {
+  if (!markers) return LANDMARKS
+  return LANDMARKS.map((l) => {
+    const m = markers.landmarks[l.landmark]
+    return m ? { ...l, dir: m.dir, forward: m.forward } : l
+  })
+}
+
 /** Direções reservadas (spawn + marcos) onde casas e props não devem ficar. */
-export const RESERVED_DIRS: Vector3[] = [UP.clone(), ...LANDMARKS.map((l) => l.dir)]
+export function reservedDirs(landmarks: LandmarkPoi[]): Vector3[] {
+  return [UP.clone(), ...landmarks.map((l) => l.dir)]
+}
+
+const HOUSE_SPACING = 4.5 // metros entre casas dentro da vila
+
+function toHousePois(houses: RepoHouse[], dirs: Vector3[]): HousePoi[] {
+  return houses.map((house, index) => ({
+    kind: 'house',
+    id: `repo:${index}`,
+    index,
+    house,
+    label: house.secret ? '🔒 Secreto' : house.name,
+    dir: dirs[index] as Vector3,
+  }))
+}
+
+/**
+ * Casas agrupadas ao redor do Empty `area_vila`, do centro para fora.
+ * Se não couberem no raio da vila, ela cresce até caber.
+ */
+function layoutVillage(
+  houses: RepoHouse[],
+  reserved: Vector3[],
+  vila: NonNullable<Markers['vila']>,
+): HousePoi[] {
+  const spacing = HOUSE_SPACING / PLANET_RADIUS
+  const n = Math.ceil((4 * Math.PI) / (spacing * spacing))
+  const candidates = fibonacciSphere(n)
+    .filter((p) => reserved.every((r) => angleBetween(p, r) > spacing * 1.5))
+    .map((p) => ({ p, a: angleBetween(p, vila.dir) }))
+    .sort((x, y) => x.a - y.a)
+  const cap = vila.radius / PLANET_RADIUS
+  const inside = candidates.filter((c) => c.a <= cap)
+  const picked = (inside.length >= houses.length ? inside : candidates).slice(0, houses.length)
+  return toHousePois(
+    houses,
+    picked.map((c) => c.p),
+  )
+}
 
 /**
  * Distribui as casas com uma esfera de Fibonacci, pulando pontos próximos
- * demais do spawn ou dos marcos. Determinístico para a mesma lista.
+ * demais do spawn ou dos marcos. Com `area_vila`, agrupa as casas nela.
+ * Determinístico para a mesma lista.
  */
-export function layoutHouses(world: WorldData | null): HousePoi[] {
+export function layoutHouses(
+  world: WorldData | null,
+  landmarks: LandmarkPoi[],
+  vila: Markers['vila'] = null,
+): HousePoi[] {
   const houses = world?.houses ?? []
   if (houses.length === 0) return []
+  const reserved = reservedDirs(landmarks)
+  if (vila) return layoutVillage(houses, reserved, vila)
   const minAngle = 0.42 // ~24°
-  let count = houses.length + RESERVED_DIRS.length * 2
+  let count = houses.length + reserved.length * 2
   for (let attempt = 0; attempt < 8; attempt++) {
     const candidates = fibonacciSphere(count).filter((p) =>
-      RESERVED_DIRS.every((r) => angleBetween(p, r) > minAngle),
+      reserved.every((r) => angleBetween(p, r) > minAngle),
     )
-    if (candidates.length >= houses.length) {
-      return houses.map((house, index) => ({
-        kind: 'house',
-        id: `repo:${index}`,
-        index,
-        house,
-        label: house.secret ? '🔒 Secreto' : house.name,
-        dir: candidates[index] as Vector3,
-      }))
-    }
+    if (candidates.length >= houses.length) return toHousePois(houses, candidates)
     count += houses.length
   }
   return []
-}
-
-export function allPois(world: WorldData | null): Poi[] {
-  return [...LANDMARKS, ...layoutHouses(world)]
 }
 
 const LANGUAGE_COLORS: Record<string, string> = {

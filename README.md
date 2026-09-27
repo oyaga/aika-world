@@ -40,10 +40,13 @@ aika-world/
 │   │       ├── ui/             # Panel, Hint, Joystick, Loading, SimpleView
 │   │       ├── state/          # store (zustand), entrada, estado do jogador
 │   │       ├── lib/sphere.ts   # Matemática na esfera (quaternions, Fibonacci, RNG)
+│   │       ├── lib/models.ts   # Descobre os .glb disponíveis
+│   │       ├── assets/models/  # Modelos .glb do Blender (ver docs/arte.md)
 │   │       └── content.tsx     # Textos das seções (pt-BR)
 │   └── server/                 # Cloudflare Worker (/health) + Durable Object `World` (stub)
 ├── packages/shared/            # Tipos: WorldData, RepoHouse, mensagens do protocolo
 ├── scripts/generate-world.mjs  # Gera world.json a partir da API do GitHub
+├── docs/arte.md                # Guia para modelar e exportar do Blender
 └── .github/workflows/ci.yml    # install → typecheck → lint → build
 ```
 
@@ -87,11 +90,15 @@ quatro casas secretas.
 - **Casas**: distribuídas com uma esfera de Fibonacci; altura por `log(estrelas + 1)` + atividade
   recente; cor pela linguagem.
 - **Árvores e pedras**: posicionamento determinístico (RNG com semente) e `InstancedMesh`.
+- **Modelos 3D**: cada `.glb` em `apps/web/src/assets/models/` substitui a forma simples
+  correspondente (com fallback se faltar ou falhar) e ganha materiais cartoon. Com `planeta.glb`,
+  a Aika segue o relevo e os Empties `poi_*`, `area_vila` e `bloqueio_*` definem marcos, vila e
+  barreiras. Detalhes em [`docs/arte.md`](docs/arte.md).
 
 ## Roadmap
 
 1. **Protótipo** ✅ — planeta, Aika andando, câmera, pontos de interesse, painéis, versão simples.
 2. **Multiplayer** — Cloudflare Durable Objects + WebSocket para ver outros visitantes andando.
 3. **Commits ao vivo** — GitHub App enviando eventos de push; casas reagem em tempo real.
-4. **Arte** — modelos no Blender (Aika em `.glb` com animações) e shader cartoon próprio.
+4. **Arte** 🚧 — carregamento dos `.glb` pronto; modelos no Blender (Aika em `.glb` com animações) e shader cartoon próprio.
 5. **Conteúdo e acabamento** — textos finais, versão 2D completa, som, SEO e performance.

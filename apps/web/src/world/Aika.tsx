@@ -1,8 +1,11 @@
-import { useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useAnimations, useGLTF } from '@react-three/drei'
 import type { Group } from 'three'
+import { modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
 import { Toon } from './materials'
+import { ModelBoundary, useModelClone } from './Model'
 
 interface AikaProps {
   /** Objeto mutável com `speed` (0..1), lido a cada frame para a animação. */
@@ -10,15 +13,56 @@ interface AikaProps {
 }
 
 /**
- * Aika — placeholder feito de primitivas. Fica de frente para +Z local,
- * com os pés em y = 0.
- *
- * TODO(etapa 4): trocar por um modelo .glb feito no Blender, por exemplo:
- *   const { scene, animations } = useGLTF('/models/aika.glb')
- *   const { actions } = useAnimations(animations, scene)
- * e usar `motion.speed` para misturar as animações idle/walk.
+ * Aika: usa `aika.glb` quando existir (ações `Idle` e `Walk`), senão a
+ * versão de primitivas. A frente do modelo é +Z (−Y no Blender).
  */
 export function Aika({ motion }: AikaProps) {
+  const url = modelUrl('aika')
+  const placeholder = <AikaPlaceholder motion={motion} />
+  if (!url) return placeholder
+  return (
+    <ModelBoundary fallback={placeholder}>
+      <Suspense fallback={placeholder}>
+        <AikaModel url={url} motion={motion} />
+      </Suspense>
+    </ModelBoundary>
+  )
+}
+
+function AikaModel({ url, motion }: AikaProps & { url: string }) {
+  const root = useModelClone(url)
+  const { animations } = useGLTF(url)
+  const { actions, names } = useAnimations(animations, root)
+  const reducedMotion = useStore((s) => s.reducedMotion)
+
+  useEffect(() => {
+    const idle = actions.Idle
+    const walk = actions.Walk
+    if (import.meta.env.DEV && (!idle || !walk)) {
+      console.warn(`[aika.glb] esperava as ações "Idle" e "Walk"; encontrei: ${names.join(', ')}`)
+    }
+    idle?.play()
+    walk?.play().setEffectiveWeight(0)
+    return () => {
+      idle?.stop()
+      walk?.stop()
+    }
+  }, [actions, names])
+
+  useFrame(() => {
+    const walking = reducedMotion ? 0 : motion.speed
+    actions.Walk?.setEffectiveWeight(walking)
+    actions.Idle?.setEffectiveWeight(1 - walking)
+  })
+
+  return <primitive object={root} />
+}
+
+/**
+ * Aika de primitivas, usada enquanto `aika.glb` não existe ou carrega.
+ * Fica de frente para +Z local, com os pés em y = 0.
+ */
+function AikaPlaceholder({ motion }: AikaProps) {
   const body = useRef<Group>(null)
   const legL = useRef<Group>(null)
   const legR = useRef<Group>(null)

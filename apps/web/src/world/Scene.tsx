@@ -1,23 +1,30 @@
 import { useEffect, useMemo } from 'react'
 import { Stars } from '@react-three/drei'
+import { modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
 import { CameraRig } from './CameraRig'
 import { Houses } from './Houses'
 import { Landmarks } from './Landmarks'
-import { RESERVED_DIRS, type HousePoi, type Poi } from './layout'
+import { reservedDirs, type HousePoi, type LandmarkPoi, type Poi } from './layout'
 import { Planet } from './Planet'
 import { Player } from './Player'
 import { Props } from './Props'
 
 interface SceneProps {
+  landmarks: LandmarkPoi[]
   houses: HousePoi[]
   pois: Poi[]
   onReady: () => void
 }
 
-export function Scene({ houses, pois, onReady }: SceneProps) {
+const hasPlanetModel = modelUrl('planeta') !== undefined
+
+export function Scene({ landmarks, houses, pois, onReady }: SceneProps) {
   const reducedMotion = useStore((s) => s.reducedMotion)
-  const avoid = useMemo(() => [...RESERVED_DIRS, ...houses.map((h) => h.dir)], [houses])
+  const avoid = useMemo(
+    () => [...reservedDirs(landmarks), ...houses.map((h) => h.dir)],
+    [landmarks, houses],
+  )
 
   useEffect(() => {
     onReady()
@@ -32,8 +39,8 @@ export function Scene({ houses, pois, onReady }: SceneProps) {
       <Stars radius={90} depth={30} count={1500} factor={3} fade speed={reducedMotion ? 0 : 0.5} />
 
       <Planet />
-      <Props avoid={avoid} />
-      <Landmarks />
+      {!hasPlanetModel && <Props avoid={avoid} />}
+      <Landmarks landmarks={landmarks} />
       <Houses houses={houses} />
       <Player pois={pois} />
       <CameraRig />

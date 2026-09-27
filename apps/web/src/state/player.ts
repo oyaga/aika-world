@@ -7,6 +7,8 @@ import { Quaternion, Vector3 } from 'three'
 export const playerState = {
   orientation: new Quaternion(),
   position: new Vector3(0, 20, 0),
+  /** Distância do centro até os pés (altura do terreno, suavizada). 0 = ainda não calculada. */
+  radius: 0,
   /** 0..1 — quão rápido está andando (para a animação). */
   speed: 0,
 }
