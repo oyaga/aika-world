@@ -6,16 +6,34 @@ import { consumeJump, readAxes } from '../state/input'
 import { playerState } from '../state/player'
 import { useStore } from '../state/store'
 import { sendMove } from '../net/multiplayer'
-import { Visitor } from './Characters'
+import { type Motion, Visitor } from './Characters'
 import { EmoteBubble } from './RemotePlayers'
 import { INTERACT_DISTANCE, type Poi, poiAnchor } from './layout'
-import { RUN_SPEED, stepVertical, SWIM_SPEED, WALK_SPEED } from './locomotion'
+import { fittingLift, RUN_SPEED, stepVertical, SWIM_SPEED, WALK_SPEED } from './locomotion'
 import { splashAt } from './Splashes'
 import { isBlocked } from './terrain'
 
 const TURN_SPEED = 2.4 // rad/s
 
 const before = new Quaternion()
+
+/** O que a animação vê: com o guarda-roupa aberto na água, o visitante fica em pé. */
+const display: Motion = {
+  get speed() {
+    return playerState.speed
+  },
+  get state() {
+    return fittingLift(playerState.state, useStore.getState().wardrobeOpen) > 0
+      ? 'ground'
+      : playerState.state
+  },
+  get gesture() {
+    return playerState.gesture
+  },
+  set gesture(g) {
+    playerState.gesture = g
+  },
+}
 const upDir = new Vector3()
 
 /**
@@ -60,7 +78,9 @@ export function Player({ pois }: { pois: Poi[] }) {
     playerState.speed += (target - playerState.speed) * Math.min(1, delta * 10)
 
     if (group.current) {
-      group.current.position.copy(playerState.position)
+      group.current.position
+        .copy(playerState.position)
+        .addScaledVector(upDir, fittingLift(playerState.state, wardrobeOpen))
       group.current.quaternion.copy(q)
     }
     sendMove(
@@ -87,7 +107,7 @@ export function Player({ pois }: { pois: Poi[] }) {
 
   return (
     <group ref={group}>
-      <Visitor motion={playerState} color={visitorColor} look={look} onWardrobe={setWardrobe} />
+      <Visitor motion={display} color={visitorColor} look={look} onWardrobe={setWardrobe} />
       <EmoteBubble id={myId} />
     </group>
   )

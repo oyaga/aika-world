@@ -25,7 +25,15 @@ const SWIM_JUMP_SPEED = 7 // sair da água pulando
 /** Água mais funda que isso (m) = nadando. */
 const SWIM_DEPTH = 0.9
 /** Quanto os pés ficam abaixo da superfície ao nadar (a cabeça fica de fora). */
-const SWIM_SINK = 1.15
+export const SWIM_SINK = 1.15
+
+/**
+ * Guarda-roupa aberto nadando: o visitante fica em pé na superfície, como num
+ * provador, em vez de deitado e meio submerso. Metros a subir a partir dos pés.
+ */
+export function fittingLift(state: MoveState, fitting: boolean): number {
+  return fitting && state === 'swim' ? SWIM_SINK : 0
+}
 
 export interface StepResult {
   /** Caiu na água neste frame (e com que força, 0..1), para o respingo. */

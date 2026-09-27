@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { Matrix4, type PerspectiveCamera, Quaternion, Vector3 } from 'three'
 import { playerState } from '../state/player'
 import { useStore } from '../state/store'
+import { fittingLift } from './locomotion'
 
 const OFFSET = new Vector3(0, 6.5, -10) // atrás (-Z) e acima (+Y) no referencial local
 const LOOK_AHEAD = new Vector3(0, 1.2, 4)
@@ -15,6 +16,7 @@ const FITTING_LOOK_PORTRAIT = new Vector3(0, -0.3, 0)
 const desiredPos = new Vector3()
 const lookAt = new Vector3()
 const up = new Vector3()
+const base = new Vector3()
 const m = new Matrix4()
 const desiredQuat = new Quaternion()
 
@@ -36,9 +38,11 @@ export function CameraRig() {
     const fitting = useStore.getState().wardrobeOpen
     const offset = fitting ? FITTING_OFFSET : OFFSET
     const target = fitting ? (aspect < 0.8 ? FITTING_LOOK_PORTRAIT : FITTING_LOOK) : LOOK_AHEAD
-    desiredPos.copy(offset).applyQuaternion(q).add(playerState.position)
-    lookAt.copy(target).applyQuaternion(q).add(playerState.position)
     up.set(0, 1, 0).applyQuaternion(q)
+    // Nadando com o guarda-roupa aberto, o visitante sobe para a superfície (ver Player).
+    base.copy(playerState.position).addScaledVector(up, fittingLift(playerState.state, fitting))
+    desiredPos.copy(offset).applyQuaternion(q).add(base)
+    lookAt.copy(target).applyQuaternion(q).add(base)
 
     m.lookAt(desiredPos, lookAt, up)
     desiredQuat.setFromRotationMatrix(m)
