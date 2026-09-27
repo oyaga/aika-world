@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "owner": "oyaga",
+  "generatedAt": "2026-09-27T00:00:00.000Z",
+  "houses": [
+    {
+      "secret": false,
+      "name": "aika-world",
+      "description": "Portfólio 3D: um pequeno planeta onde a Aika caminha.",
+      "url": "https://github.com/oyaga/aika-world",
+      "language": "TypeScript",
+      "stars": 0,
+      "pushedAt": "2026-09-27T00:00:00.000Z"
+    },
+    {
+      "secret": false,
+      "name": "aika-nakamura",
+      "description": "Site da agência Aika",
+      "url": "https://github.com/oyaga/aika-nakamura",
+      "language": "Vue",
+      "stars": 0,
+      "pushedAt": "2026-08-15T00:00:00.000Z"
+    },
+    { "secret": true, "language": "TypeScript", "stars": 0, "pushedAt": "2026-09-10T00:00:00.000Z" },
+    { "secret": true, "language": "JavaScript", "stars": 0, "pushedAt": "2026-07-02T00:00:00.000Z" },
+    { "secret": true, "language": "Python", "stars": 0, "pushedAt": "2026-05-20T00:00:00.000Z" },
+    { "secret": true, "language": null, "stars": 0, "pushedAt": "2026-03-11T00:00:00.000Z" }
+  ]
+}
