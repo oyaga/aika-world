@@ -21,6 +21,27 @@ export const CONTACT = {
   site: 'https://aikanakamura.com',
 }
 
+interface ContactOption {
+  icon: string
+  label: string
+  detail: string
+  href: string
+}
+
+/** Todas as formas de contato, mostradas na caixa de correio ao lado do templo. */
+export const CONTACT_OPTIONS: ContactOption[] = [
+  {
+    icon: '💬',
+    label: 'WhatsApp',
+    detail: 'Mensagem direta',
+    href: `${CONTACT.whatsapp}?text=${encodeURIComponent('Olá, Felipe! Vim pelo Aika World.')}`,
+  },
+  { icon: '✉️', label: 'E-mail', detail: CONTACT.email, href: `mailto:${CONTACT.email}` },
+  { icon: '💼', label: 'LinkedIn', detail: 'felipe-nakamura-dsg', href: CONTACT.linkedin },
+  { icon: '🐙', label: 'GitHub', detail: `@${GITHUB_USER}`, href: CONTACT.github },
+  { icon: '🌐', label: 'Site', detail: 'aikanakamura.com', href: CONTACT.site },
+]
+
 export interface Service {
   slug: string
   icon: string
@@ -182,34 +203,29 @@ export const SECTIONS: Record<'sobre' | 'servicos' | 'contato', SectionContent> 
     ),
   },
   contato: {
-    title: 'Contato',
+    title: 'Caixa de correio',
     body: (
       <>
-        <p>A torre de rádio está captando sinais. Fale com o Felipe (e comigo) por aqui:</p>
-        <ul className="links">
-          <li>
-            <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
-              WhatsApp
-            </a>
-          </li>
-          <li>
-            <a href={`mailto:${CONTACT.email}`}>E-mail: {CONTACT.email}</a>
-          </li>
-          <li>
-            <a href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer">
-              LinkedIn
-            </a>
-          </li>
-          <li>
-            <a href={CONTACT.github} target="_blank" rel="noopener noreferrer">
-              GitHub: @{GITHUB_USER}
-            </a>
-          </li>
-          <li>
-            <a href={CONTACT.site} target="_blank" rel="noopener noreferrer">
-              aikanakamura.com
-            </a>
-          </li>
+        <p>Deixe sua mensagem! Escolha como falar com o Felipe (e com a Aika):</p>
+        <ul className="contacts">
+          {CONTACT_OPTIONS.map((c) => (
+            <li key={c.label}>
+              <a
+                href={c.href}
+                {...(c.href.startsWith('mailto:')
+                  ? {}
+                  : { target: '_blank', rel: 'noopener noreferrer' })}
+              >
+                <span className="contacts__icon" aria-hidden="true">
+                  {c.icon}
+                </span>
+                <span>
+                  <strong>{c.label}</strong>
+                  <small>{c.detail}</small>
+                </span>
+              </a>
+            </li>
+          ))}
         </ul>
       </>
     ),

@@ -541,3 +541,42 @@ button {
     display: none;
   }
 }
+
+/* Caixa de correio: opções de contato */
+.contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.contacts a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.contacts a:hover,
+.contacts a:focus-visible {
+  border-color: var(--accent);
+}
+
+.contacts__icon {
+  font-size: 1.4rem;
+}
+
+.contacts strong,
+.contacts small {
+  display: block;
+}
+
+.contacts small {
+  color: var(--muted);
+}

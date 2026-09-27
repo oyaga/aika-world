@@ -10,7 +10,7 @@ a forma simples continua.
 | `planeta.glb` | terreno + decoração + Empties de posição |
 | `templo.glb`  | Sobre                                    |
 | `oficina.glb` | Serviços                                 |
-| `torre.glb`   | Contato                                  |
+| `correio.glb` | caixa de correio (contatos)              |
 | `casa.glb`    | casa base dos repositórios               |
 | `arvore.glb`  | árvore espalhada (só sem `planeta.glb`)  |
 | `pedra.glb`   | pedra espalhada (só sem `planeta.glb`)   |

@@ -16,14 +16,15 @@ import { Toon } from './materials'
 import { ModelBoundary, useModelClone } from './Model'
 import { setTerrain } from './terrain'
 
-const LANDMARK_KINDS: LandmarkKind[] = ['templo', 'torre']
+const LANDMARK_KINDS: LandmarkKind[] = ['templo', 'correio']
 const DEFAULT_VILA_RADIUS = 12 // metros
 
 /**
  * Planeta: `planeta.glb` quando existir, senão a esfera procedural.
  * Convenções de nomes no Blender (ver docs/arte.md):
  * - `bloqueio_*`  → mesh invisível onde não se anda;
- * - `poi_templo`, `poi_torre` → Empty com a posição do marco
+ * - `poi_templo`, `poi_correio` → Empty com a posição do marco (sem `poi_correio`,
+ *   a caixa de correio fica ao lado do templo)
  *   (a frente do Empty, −Y no Blender, é para onde o prédio olha);
  * - `area_vila`   → Empty no centro da vila das casas (propriedade `raio` em metros);
  * - `area_servicos` → Empty no centro da Praça dos Serviços;

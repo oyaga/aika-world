@@ -16,7 +16,7 @@ ou falhar, a forma simples continua aparecendo. Os `.blend` podem ficar em `art/
 | `felipe.glb`  | NPC do Felipe, na frente do templo                  |
 | `servico.glb` | prédio de empresa da Praça dos Serviços (6 cópias)  |
 | `npc.glb`     | NPC genérico na porta de cada serviço (6 cópias)    |
-| `torre.glb`   | Torre de rádio · Contato                            |
+| `correio.glb` | caixa de correio ao lado do templo · Contato        |
 | `casa.glb`    | casa base dos repositórios (cor e altura variam)    |
 | `arvore.glb`  | árvore espalhada pelo código (só sem `planeta.glb`) |
 | `pedra.glb`   | pedra espalhada pelo código (só sem `planeta.glb`)  |
@@ -93,19 +93,19 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 ### Nomes especiais (objetos dentro do `planeta.glb`)
 
-| Nome                                | Tipo  | Efeito                                                                                             |
-| ----------------------------------- | ----- | -------------------------------------------------------------------------------------------------- |
-| `bloqueio_*` (ex.: `bloqueio_lago`) | Mesh  | Barreira invisível: a Aika não entra na área que ele cobre visto de cima.                          |
-| `poi_templo`, `poi_torre`           | Empty | Posição do marco. Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
-| `area_servicos`                     | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).         |
-| `area_vila`                         | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).   |
-| `historia_1`, `historia_2`, …       | Empty | Posição dos NPCs da Trilha da história, na ordem dos marcos (a placa fica 1,3 m atrás).            |
+| Nome                                | Tipo  | Efeito                                                                                                                                                 |
+| ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bloqueio_*` (ex.: `bloqueio_lago`) | Mesh  | Barreira invisível: a Aika não entra na área que ele cobre visto de cima.                                                                              |
+| `poi_templo`, `poi_correio`         | Empty | Posição do marco (sem `poi_correio`, a caixa fica ao lado do templo). Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
+| `area_servicos`                     | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).                                                             |
+| `area_vila`                         | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).                                                       |
+| `historia_1`, `historia_2`, …       | Empty | Posição dos NPCs da Trilha da história, na ordem dos marcos (a placa fica 1,3 m atrás).                                                                |
 
 - O **spawn** da Aika é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
 - Para a propriedade `raio`: selecione o Empty → Object Properties → Custom Properties → Add, e
   marque **Include → Custom Properties** na exportação.
 - Os prédios, NPCs e casas são posicionados pelo código em cima do terreno. Não modele o templo,
-  os prédios de serviço e a torre dentro do planeta: use os Empties. Deixe uma praça plana de
+  os prédios de serviço e a caixa de correio dentro do planeta: use os Empties. Deixe uma praça plana de
   cerca de 18 m de diâmetro em volta do `area_servicos`.
 
 ## Templo japonês
@@ -113,6 +113,12 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 - Base de pedra, pilares, paredes shoji e telhado em dois níveis; **torii** na frente (a cerca de
   4,8 m do centro, em −Y) e duas lanternas de pedra. Pilares e torii no laranja da marca.
 - Deixe livre a faixa entre o templo e o torii: o Felipe fica ali, a 3,2 m do centro.
+
+## Caixa de correio
+
+- Caixa de correio no estilo japonês (tipo "posuto"), cerca de 1,5 m de altura, no laranja da
+  marca, com portinhola na frente (−Y) e uma bandeirinha. Fica à direita do templo, a cerca de
+  3,8 m para o lado e 2,2 m à frente do centro dele. Interagir com ela mostra os contatos.
 
 ## NPCs (Felipe e atendentes)
 

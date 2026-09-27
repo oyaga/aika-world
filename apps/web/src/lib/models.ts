@@ -9,7 +9,7 @@ export type ModelName =
   | 'npc'
   | 'planeta'
   | 'templo'
-  | 'torre'
+  | 'correio'
   | 'servico'
   | 'casa'
   | 'arvore'

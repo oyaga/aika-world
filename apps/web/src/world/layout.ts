@@ -12,7 +12,7 @@ import {
   UP,
 } from '../lib/sphere'
 
-export type LandmarkKind = 'templo' | 'torre'
+export type LandmarkKind = 'templo' | 'correio'
 
 export interface LandmarkPoi {
   kind: 'landmark'
@@ -64,22 +64,28 @@ export type Poi = LandmarkPoi | ServicePoi | HousePoi | StoryPoi
 /** Raio (unidades de mundo, na superfície) para mostrar a dica de interação. */
 export const INTERACT_DISTANCE = 4
 
+const TEMPLE_DIR = dirFromAngles(28, 0)
+
 export const LANDMARKS: LandmarkPoi[] = [
   {
     kind: 'landmark',
     id: 'sobre',
     landmark: 'templo',
     label: 'Templo · Felipe',
-    dir: dirFromAngles(28, 0),
+    dir: TEMPLE_DIR,
   },
   {
     kind: 'landmark',
     id: 'contato',
-    landmark: 'torre',
-    label: 'Torre de rádio · Contato',
-    dir: dirFromAngles(34, -120),
+    landmark: 'correio',
+    label: '📮 Caixa de correio · Contato',
+    dir: TEMPLE_DIR, // recalculada ao lado do templo em resolveLandmarks
   },
 ]
+
+/** Posição da caixa de correio no referencial do templo: à direita e à frente (m). */
+const MAILBOX_RIGHT = 3.8
+const MAILBOX_FORWARD = 2.2
 
 /** Distância (m) do Felipe à frente do centro do templo, no referencial do templo (+Z). */
 export const FELIPE_OFFSET = 3.2
@@ -100,13 +106,37 @@ export function poiAnchor(poi: Poi): Vector3 {
   return poi.dir
 }
 
-/** Marcos com as posições dos Empties `poi_*` do planeta, quando existirem. */
+/** Direção de um ponto ao lado de um marco, em metros no referencial dele. */
+function besideLandmark(poi: LandmarkPoi, right: number, forward: number): Vector3 {
+  const fwd = landmarkForward(poi)
+  const side = new Vector3().crossVectors(poi.dir, fwd) // +X local (direita)
+  return poi.dir
+    .clone()
+    .multiplyScalar(PLANET_RADIUS)
+    .addScaledVector(fwd, forward)
+    .addScaledVector(side, right)
+    .normalize()
+}
+
+/**
+ * Marcos com as posições dos Empties `poi_*` do planeta, quando existirem.
+ * A caixa de correio fica ao lado do templo, a não ser que tenha Empty próprio.
+ */
 export function resolveLandmarks(markers: Markers | null): LandmarkPoi[] {
-  if (!markers) return LANDMARKS
-  return LANDMARKS.map((l) => {
-    const m = markers.landmarks[l.landmark]
+  const placed = LANDMARKS.map((l) => {
+    const m = markers?.landmarks[l.landmark]
     return m ? { ...l, dir: m.dir, forward: m.forward } : l
   })
+  const temple = placed.find((l) => l.landmark === 'templo')
+  return placed.map((l) =>
+    l.landmark === 'correio' && temple && !markers?.landmarks.correio
+      ? {
+          ...l,
+          dir: besideLandmark(temple, MAILBOX_RIGHT, MAILBOX_FORWARD),
+          forward: temple.forward,
+        }
+      : l,
+  )
 }
 
 /** Centro padrão da Praça dos Serviços (sem o Empty `area_servicos`). */

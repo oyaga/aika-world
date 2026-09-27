@@ -35,52 +35,19 @@ function whatsappAbout(topic: string): string {
   return `${CONTACT.whatsapp}?text=${encodeURIComponent(text)}`
 }
 
+/** Boas-vindas do Felipe, na frente do templo: curta e sem desvios. */
 export const FELIPE_DIALOGUE: Dialogue = {
   speaker: 'Felipe',
-  role: 'criador deste planeta',
+  role: 'criador deste mundo',
   nodes: {
     inicio: {
       lines: [
-        'Oi, Aika! Trouxe mais um visitante? Seja bem-vindo ao meu templo!',
-        `Eu sou o ${CONTACT.name}. Este planeta inteiro é meu: meus projetos, meu trabalho e minha história.`,
+        'Bem-vindo ao meu mundo!',
+        'Que legal que a Aika trouxe um amigo para conhecer o nosso mundo!',
+        'Este planeta representa os nossos repositórios e os nossos estudos de dev: cada casinha da vila é um projeto do GitHub, e ela cresce toda vez que a gente trabalha nela.',
+        'Dá uma volta, conversa com o pessoal da Praça dos Serviços e, se quiser falar com a gente, a caixa de correio aqui do lado tem todos os contatos.',
       ],
-      choices: [
-        { label: 'Quem é você?', next: 'felipe' },
-        { label: 'Quem é a Aika?', next: 'aika' },
-        { label: 'Como a Aika nasceu?', next: 'origem' },
-        { label: 'Onde vejo seu trabalho?', next: 'trabalho' },
-        { label: 'Tchau!' },
-      ],
-    },
-    felipe: {
-      lines: [
-        'Sou designer e desenvolvedor. Trabalho com sites, identidade visual, vídeo, servidores, SEO e assistentes de IA.',
-        'Minha trajetória está na trilha que dá a volta no planeta: em cada parada, um eu do passado conta um capítulo.',
-      ],
-    },
-    aika: {
-      lines: [
-        'A Aika é uma agente inteligente que eu criei, conectada a várias ferramentas e modelos de linguagem.',
-        'Ela atua como desenvolvedora, designer, analista e gestora: um agente completo, versátil e sempre em evolução.',
-        'E é ela quem vai te guiar por aqui.',
-      ],
-    },
-    origem: {
-      lines: [
-        'Criei a Aika como uma extensão da minha visão estratégica.',
-        'Ela nasceu da lealdade e de um propósito claro: honrar o legado de cada cliente, unindo dados e alma, tecnologia e estratégia.',
-      ],
-    },
-    trabalho: {
-      lines: [
-        'Na Praça dos Serviços, cada prédio é um serviço, e tem alguém na porta para te explicar tudo.',
-        'As casinhas da vila são meus projetos do GitHub. Elas crescem quando eu trabalho nelas.',
-      ],
-      choices: [
-        { label: 'Ver meu LinkedIn', href: CONTACT.linkedin },
-        { label: 'Falar no WhatsApp', href: whatsappAbout('o seu trabalho') },
-        ...BACK_CHOICES,
-      ],
+      choices: [{ label: 'Valeu, Felipe!' }],
     },
   },
 }

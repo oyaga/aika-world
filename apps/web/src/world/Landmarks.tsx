@@ -1,6 +1,6 @@
 import { type JSX, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import type { Mesh } from 'three'
+import type { Group } from 'three'
 import { faceTowards, UP } from '../lib/sphere'
 import { useStore } from '../state/store'
 import { Label } from './Label'
@@ -145,40 +145,53 @@ function Templo() {
   )
 }
 
-function Torre() {
-  const light = useRef<Mesh>(null)
+/** Caixa de correio no estilo japonês, na cor da marca, com a bandeirinha levantada. */
+function Correio() {
+  const flag = useRef<Group>(null)
   const reducedMotion = useStore((s) => s.reducedMotion)
   useFrame(({ clock }) => {
-    if (!light.current || reducedMotion) return
-    light.current.visible = Math.sin(clock.elapsedTime * 4) > -0.3
+    if (!flag.current || reducedMotion) return
+    flag.current.rotation.x = -0.15 + Math.sin(clock.elapsedTime * 2.5) * 0.15
   })
   return (
     <group>
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.8, 0.6, 1.8]} />
-        <Toon color="#c9ccd6" />
+      <mesh position={[0, 0.45, 0]}>
+        <cylinderGeometry args={[0.07, 0.09, 0.9, 6]} />
+        <Toon color="#8a5a3b" />
       </mesh>
-      <mesh position={[0, 3.2, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.45, 5.4, 4]} />
+      <mesh position={[0, 1.1, 0]}>
+        <boxGeometry args={[0.6, 0.45, 0.8]} />
         <Toon color={BRAND.orange} />
       </mesh>
-      {[1.6, 2.8, 4].map((y) => (
-        <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.45 - y * 0.07, 0.04, 6, 12]} />
+      <mesh position={[0, 1.32, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.3, 0.3, 0.8, 12, 1, false, 0, Math.PI]} />
+        <Toon color={BRAND.orange} />
+      </mesh>
+      {/* Portinhola da frente (+Z) */}
+      <mesh position={[0, 1.15, 0.41]}>
+        <boxGeometry args={[0.44, 0.3, 0.03]} />
+        <Toon color="#c94500" />
+      </mesh>
+      <mesh position={[0, 1.2, 0.43]}>
+        <boxGeometry args={[0.26, 0.04, 0.02]} />
+        <Toon color={BRAND.dark} />
+      </mesh>
+      {/* Bandeirinha */}
+      <group ref={flag} position={[0.33, 1.15, 0.1]}>
+        <mesh position={[0, 0.2, 0]}>
+          <boxGeometry args={[0.04, 0.4, 0.04]} />
           <Toon color="#f4f4f4" />
         </mesh>
-      ))}
-      <mesh ref={light} position={[0, 6.05, 0]}>
-        <sphereGeometry args={[0.22, 12, 8]} />
-        <meshBasicMaterial color="#ffe06b" />
-      </mesh>
+      </group>
     </group>
   )
 }
 
+const LABEL_HEIGHT: Record<LandmarkKind, number> = { templo: 6, correio: 2.2 }
+
 const PLACEHOLDERS: Record<LandmarkKind, () => JSX.Element> = {
   templo: Templo,
-  torre: Torre,
+  correio: Correio,
 }
 
 function Landmark({ poi }: { poi: LandmarkPoi }) {
@@ -189,7 +202,7 @@ function Landmark({ poi }: { poi: LandmarkPoi }) {
       position: poi.dir.clone().multiplyScalar(ground),
       // Sem Empty girado, o prédio olha para o polo norte (spawn).
       quaternion: faceTowards(poi.dir, poi.forward ?? UP),
-      labelPos: poi.dir.clone().multiplyScalar(ground + 6),
+      labelPos: poi.dir.clone().multiplyScalar(ground + LABEL_HEIGHT[poi.landmark]),
     }
   }, [poi])
   return (

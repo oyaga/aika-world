@@ -2,9 +2,8 @@
 
 O planeta de **Felipe Kenji "Nakamura"** em 3D: seus projetos, serviços e história, com a
 **Aika**, a agente de IA criada por ele, como guia. Cada casinha é um repositório do GitHub de
-[@oyaga](https://github.com/oyaga). No templo japonês, o próprio Felipe conta quem ele é e como a
-Aika nasceu; na Praça dos Serviços, um NPC na porta de cada prédio explica o serviço; a torre de
-rádio tem os contatos e, na Trilha da história, o Felipe de cada época conta um capítulo da vida
+[@oyaga](https://github.com/oyaga). No templo japonês, o Felipe dá as boas-vindas e explica o mundo, e a
+caixa de correio ao lado reúne todos os contatos; na Praça dos Serviços, um NPC na porta de cada prédio explica o serviço; e, na Trilha da história, o Felipe de cada época conta um capítulo da vida
 dele.
 Inspirado em
 [messenger.abeto.co](https://messenger.abeto.co/).
