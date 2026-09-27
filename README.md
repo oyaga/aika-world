@@ -50,6 +50,8 @@ aika-world/
 ├── packages/shared/            # Tipos: WorldData, RepoHouse, mensagens do protocolo
 ├── scripts/generate-world.mjs  # Gera world.json a partir da API do GitHub
 ├── docs/arte.md                # Guia para modelar e exportar do Blender
+├── docs/deploy.md              # Como colocar no ar (Cloudflare + GitHub Actions)
+├── scripts/check-models.mjs    # Confere os .glb (nomes, animações, triângulos, tamanho)
 └── .github/workflows/ci.yml    # install → typecheck → lint → build
 ```
 
@@ -63,6 +65,7 @@ pnpm dev          # abre o cliente em http://localhost:5173
 pnpm typecheck    # checagem de tipos em todos os pacotes
 pnpm lint         # ESLint
 pnpm build        # build de produção (apps/web/dist)
+pnpm models:check # confere os .glb contra o guia de arte (docs/arte.md)
 ```
 
 ### Multiplayer (opcional)
@@ -76,13 +79,9 @@ pnpm dev                                  # abra em duas abas para se ver andand
 pnpm --filter @aika-world/server smoke    # teste de fumaça do protocolo (com o servidor rodando)
 ```
 
-Publicando na Cloudflare:
-
-1. `pnpm --filter @aika-world/server exec wrangler login` (uma vez) e depois
-   `pnpm --filter @aika-world/server run deploy`. O comando mostra a URL do Worker.
-2. No build do site (ex.: Cloudflare Pages), defina `VITE_WORLD_URL=wss://<url-do-worker>/world`.
-3. Opcional: restrinja quem pode conectar com a variável do Worker
-   `ALLOWED_ORIGINS=https://seu-dominio.com` (no painel ou em `wrangler.toml` → `[vars]`).
+Publicando: um único Worker da Cloudflare serve o site e o multiplayer no mesmo endereço, com
+deploy automático pelo GitHub Actions. Passo a passo em [`docs/deploy.md`](docs/deploy.md)
+(`pnpm preview:prod` roda igual à produção em http://localhost:8787).
 
 Como funciona: cada sala é um Durable Object `World` com WebSockets em modo de hibernação
 (conexões paradas não custam nada). O servidor dá a cada visitante um nome ("Viajante #427") e uma
@@ -129,7 +128,7 @@ quatro casas secretas.
 
 1. **Protótipo** ✅ — planeta, visitante andando com a Aika de guia, câmera, pontos de interesse, painéis, versão simples.
 2. **Multiplayer** ✅ — Cloudflare Durable Objects + WebSocket: visitantes ao vivo, nomes, cores e
-   emotes (falta publicar o Worker).
+   emotes. Deploy pronto (falta configurar a conta Cloudflare, ver docs/deploy.md).
 3. **Commits ao vivo** — GitHub App enviando eventos de push; casas reagem em tempo real.
 4. **Arte** 🚧 — carregamento dos `.glb` pronto; modelos no Blender (Aika em `.glb` com animações) e shader cartoon próprio.
 5. **Conteúdo e acabamento** — textos finais, versão 2D completa, som, SEO e performance.

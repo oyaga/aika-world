@@ -13,7 +13,11 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "world": "node scripts/generate-world.mjs"
+    "world": "node scripts/generate-world.mjs",
+    "build:prod": "VITE_WORLD_URL=same-origin pnpm --filter @aika-world/web build",
+    "release": "pnpm build:prod && pnpm --filter @aika-world/server run deploy",
+    "preview:prod": "pnpm build:prod && pnpm --filter @aika-world/server dev",
+    "models:check": "node scripts/check-models.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

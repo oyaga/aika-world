@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** URL do WebSocket do servidor do mundo (ex.: wss://…/world). Vazio = sem multiplayer. */
+  /** `same-origin`, ou a URL do WebSocket do servidor (ex.: ws://localhost:8787/world). Vazio = sem multiplayer. */
   readonly VITE_WORLD_URL?: string
 }
 

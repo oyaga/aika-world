@@ -16,10 +16,19 @@ import { useStore } from '../state/store'
 
 /**
  * Conexão com o servidor do mundo (Cloudflare Durable Object). Só liga se
- * `VITE_WORLD_URL` estiver definido (ex.: wss://aika-world-server.<conta>.workers.dev/world);
- * sem ele, o planeta funciona sozinho, como antes.
+ * `VITE_WORLD_URL` estiver definido; sem ele, o planeta funciona sozinho.
+ * - `same-origin`: o próprio endereço do site + /world (deploy num Worker só);
+ * - ou uma URL completa, ex.: ws://localhost:8787/world.
  */
-const WORLD_URL = import.meta.env.VITE_WORLD_URL || undefined
+function resolveWorldUrl(): string | undefined {
+  const value = import.meta.env.VITE_WORLD_URL?.trim()
+  if (!value) return undefined
+  if (value !== 'same-origin') return value
+  const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  return `${scheme}://${window.location.host}/world`
+}
+
+const WORLD_URL = resolveWorldUrl()
 
 export interface RemotePlayer {
   info: PlayerInfo

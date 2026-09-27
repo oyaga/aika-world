@@ -16,6 +16,8 @@ import {
 
 export interface Env {
   WORLD: DurableObjectNamespace<World>
+  /** Arquivos estáticos do site (apps/web/dist). */
+  ASSETS?: Fetcher
   /** Origens permitidas, separadas por vírgula (ex.: "https://aikaworld.com"). Vazio = qualquer uma. */
   ALLOWED_ORIGINS?: string
 }
@@ -202,6 +204,6 @@ export default {
       return stub.fetch(request)
     }
 
-    return new Response('Not found', { status: 404 })
+    return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 })
   },
 } satisfies ExportedHandler<Env>
