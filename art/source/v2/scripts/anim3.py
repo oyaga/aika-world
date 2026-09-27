@@ -91,7 +91,7 @@ def make_anims3(arm, set_=("Idle","Walk","Run","Jump","Swim","Wave"), prefix="",
         rest=arm.data.bones['root'].matrix_local
         for f,s in ((1,1),(9,0),(17,-1),(25,0),(33,1)):
             reset()
-            M=Matrix.Translation((0,0.9,-0.3)) @ Matrix.Rotation(R(78),4,'X') @ rest
+            M=Matrix.Translation((0,0.9,0.85)) @ Matrix.Rotation(R(78),4,'X') @ rest
             P['root'].matrix_basis = rest.inverted() @ M
             setp(head={'rot':(-55*ss,4*s,0)}, leg_L={'rot':(15*s*sl,0,0)}, leg_R={'rot':(-15*s*sl,0,0)}, shin_L={'rot':((20-10*s)*sk,0,0)}, shin_R={'rot':((20+10*s)*sk,0,0)},
                  arm_L={'rot':((75+55*s)*sa,0,-25)}, arm_R={'rot':((75-55*s)*sa,0,25)}, forearm_L={'rot':(25*sf,0,0)}, forearm_R={'rot':(25*sf,0,0)},
