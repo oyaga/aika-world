@@ -3,6 +3,7 @@ import { Stars } from '@react-three/drei'
 import { modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
 import { CameraRig } from './CameraRig'
+import { Companion } from './Companion'
 import { Houses } from './Houses'
 import { Landmarks } from './Landmarks'
 import {
@@ -61,6 +62,7 @@ export function Scene({ landmarks, story, services, houses, pois, onReady }: Sce
       <Trail story={story} showPath={!hasPlanetModel} />
       <Houses houses={houses} />
       <Player pois={pois} />
+      <Companion pois={pois} />
       <CameraRig />
     </>
   )

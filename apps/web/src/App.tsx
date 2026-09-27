@@ -21,6 +21,7 @@ import { Scene } from './world/Scene'
 export function App() {
   const world = useStore((s) => s.world)
   const simpleView = useStore((s) => s.simpleView)
+  const aikaLine = useStore((s) => s.aikaLine)
   const toggleSimpleView = useStore((s) => s.toggleSimpleView)
   const loadWorld = useStore((s) => s.loadWorld)
   const [sceneReady, setSceneReady] = useState(false)
@@ -82,6 +83,9 @@ export function App() {
               <kbd>D</kbd> para andar · <kbd>E</kbd> para interagir
             </p>
           </header>
+          <p className="sr-only" aria-live="polite">
+            {aikaLine ? `Aika: ${aikaLine.text}` : ''}
+          </p>
           <Hint pois={pois} />
           <Panel pois={pois} />
           <Joystick />

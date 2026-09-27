@@ -5,6 +5,7 @@
  */
 export type ModelName =
   | 'aika'
+  | 'visitante'
   | 'felipe'
   | 'npc'
   | 'planeta'

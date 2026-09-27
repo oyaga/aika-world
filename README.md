@@ -39,7 +39,7 @@ aika-world/
 │   ├── web/                    # Cliente 3D (Vite + React + R3F)
 │   │   ├── public/world.json   # Dados do mundo (gerado por `pnpm world`)
 │   │   └── src/
-│   │       ├── world/          # Planet, Player, Aika, Houses, Landmarks, Props, CameraRig...
+│   │       ├── world/          # Planet, Player, Companion (Aika), Characters, Houses, NPCs, CameraRig...
 │   │       ├── ui/             # Panel, Hint, Joystick, Loading, SimpleView
 │   │       ├── state/          # store (zustand), entrada, estado do jogador
 │   │       ├── lib/sphere.ts   # Matemática na esfera (quaternions, Fibonacci, RNG)
@@ -86,20 +86,24 @@ quatro casas secretas.
 
 ## Como funciona
 
-- **Caminhar na esfera**: a orientação da Aika é um único quaternion. O "up" local é a normal da
+- **Caminhar na esfera**: o visitante (um Viajante com roupa de cor sorteada) é controlado pelo
+  teclado ou joystick; sua orientação é um único quaternion. O "up" local é a normal da
   superfície e a posição é sempre `up × raio` (gravidade implícita, sem física). Andar é uma
   rotação em torno do eixo X local; virar, em torno do Y local.
 - **Câmera**: terceira pessoa, atrás e acima no referencial local, suavizada com `lerp`/`slerp`.
 - **Casas**: distribuídas com uma esfera de Fibonacci; altura por `log(estrelas + 1)` + atividade
   recente; cor pela linguagem.
+- **Aika, a guia**: anda ao lado do visitante (acelera quando fica para trás), fala o nome e a
+  descrição de cada repositório quando ele chega perto e, de tempos em tempos, solta um
+  comentário aleatório num balão sobre a cabeça. As falas ficam em `src/guide.ts`.
 - **NPCs e conversas**: `src/dialogues.ts` define as conversas como pequenos grafos (falas +
   opções de resposta); a do Felipe é escrita à mão e as dos serviços e da história são geradas a
   partir de `SERVICES` e `STORY` em `content.tsx`. A caixa de diálogo digita as falas, aceita E/Espaço/Enter para
-  avançar e 1–9 para escolher. Os NPCs se viram para a Aika quando ela chega perto.
+  avançar e 1–9 para escolher. Os NPCs se viram para o visitante quando ele chega perto.
 - **Árvores e pedras**: posicionamento determinístico (RNG com semente) e `InstancedMesh`.
 - **Modelos 3D**: cada `.glb` em `apps/web/src/assets/models/` substitui a forma simples
   correspondente (com fallback se faltar ou falhar) e ganha materiais cartoon. Com `planeta.glb`,
-  a Aika segue o relevo e os Empties `poi_*`, `area_vila` e `bloqueio_*` definem marcos, vila e
+  os personagens seguem o relevo e os Empties `poi_*`, `area_vila` e `bloqueio_*` definem marcos, vila e
   barreiras. Detalhes em [`docs/arte.md`](docs/arte.md).
 
 ## Roadmap

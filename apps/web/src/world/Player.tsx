@@ -5,7 +5,7 @@ import { angleBetween, PLANET_RADIUS, positionFromOrientation, turn, UP, walk } 
 import { readAxes } from '../state/input'
 import { playerState } from '../state/player'
 import { useStore } from '../state/store'
-import { Aika } from './Aika'
+import { Visitor } from './Characters'
 import { INTERACT_DISTANCE, type Poi, poiAnchor } from './layout'
 import { isBlocked, surfaceRadius } from './terrain'
 
@@ -16,13 +16,14 @@ const before = new Quaternion()
 const upDir = new Vector3()
 
 /**
- * Controle da Aika sobre a esfera. A orientação (quaternion) é a única
+ * Controle do visitante sobre a esfera (a Aika o acompanha, ver Companion). A orientação (quaternion) é a única
  * fonte de verdade: "up" local = normal da superfície, frente = +Z local.
  * Gravidade implícita: a posição é sempre up * altura do chão, então ela
  * nunca sai do terreno. Objetos `bloqueio_*` desfazem o passo.
  */
 export function Player({ pois }: { pois: Poi[] }) {
   const group = useRef<Group>(null)
+  const visitorColor = useStore((s) => s.visitorColor)
   const anchors = useMemo(() => pois.map(poiAnchor), [pois])
 
   useFrame((_, rawDelta) => {
@@ -73,7 +74,7 @@ export function Player({ pois }: { pois: Poi[] }) {
 
   return (
     <group ref={group}>
-      <Aika motion={playerState} />
+      <Visitor motion={playerState} color={visitorColor} />
     </group>
   )
 }

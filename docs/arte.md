@@ -8,18 +8,19 @@ Salve os `.glb` em [`apps/web/src/assets/models/`](../apps/web/src/assets/models
 substitui a forma simples correspondente assim que existe. Se faltar, ainda estiver carregando
 ou falhar, a forma simples continua aparecendo. Os `.blend` podem ficar em `art/source/`.
 
-| Arquivo       | O que é                                             |
-| ------------- | --------------------------------------------------- |
-| `aika.glb`    | personagem, com as ações `Idle` e `Walk`            |
-| `planeta.glb` | terreno + decoração fixa + Empties de posição       |
-| `templo.glb`  | templo japonês · Sobre (com torii e lanternas)      |
-| `felipe.glb`  | NPC do Felipe, na frente do templo                  |
-| `servico.glb` | prédio de empresa da Praça dos Serviços (6 cópias)  |
-| `npc.glb`     | NPC genérico na porta de cada serviço (6 cópias)    |
-| `correio.glb` | caixa de correio ao lado do templo · Contato        |
-| `casa.glb`    | casa base dos repositórios (cor e altura variam)    |
-| `arvore.glb`  | árvore espalhada pelo código (só sem `planeta.glb`) |
-| `pedra.glb`   | pedra espalhada pelo código (só sem `planeta.glb`)  |
+| Arquivo         | O que é                                             |
+| --------------- | --------------------------------------------------- |
+| `aika.glb`      | a Aika, guia que segue o visitante (`Idle`/`Walk`)  |
+| `visitante.glb` | o visitante/viajante (`Idle`/`Walk`, roupa `@tint`) |
+| `planeta.glb`   | terreno + decoração fixa + Empties de posição       |
+| `templo.glb`    | templo japonês · Sobre (com torii e lanternas)      |
+| `felipe.glb`    | NPC do Felipe, na frente do templo                  |
+| `servico.glb`   | prédio de empresa da Praça dos Serviços (6 cópias)  |
+| `npc.glb`       | NPC genérico na porta de cada serviço (6 cópias)    |
+| `correio.glb`   | caixa de correio ao lado do templo · Contato        |
+| `casa.glb`      | casa base dos repositórios (cor e altura variam)    |
+| `arvore.glb`    | árvore espalhada pelo código (só sem `planeta.glb`) |
+| `pedra.glb`     | pedra espalhada pelo código (só sem `planeta.glb`)  |
 
 ## Escala e orientação
 
@@ -72,11 +73,19 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 - Um mesh com **Armature**.
 - Ações com estes nomes exatos: **`Idle`** e **`Walk`**. `Wave` é opcional, para um emote futuro.
-- `Walk` anda **no lugar**, sem sair da origem: quem move a Aika é o código.
+- `Walk` anda **no lugar**, sem sair da origem: quem move a Aika é o código (ela segue o
+  visitante e anda ao lado dele).
 - As duas ações devem fazer loop. Na exportação, marque **Animation → Export all actions** (ou
   empilhe no NLA).
 - O código mistura `Idle` e `Walk` conforme a velocidade. Se os nomes estiverem errados, o
   console do navegador avisa quais ações encontrou.
+
+## Visitante
+
+- O personagem de quem visita o site: um "viajante" chibi com mochila, mesma escala, orientação e
+  ações (`Idle`, `Walk`) da Aika.
+- A roupa usa um material `@tint`: cada visita sorteia uma cor (e, no multiplayer, cada visitante
+  terá a sua).
 
 ## Planeta
 
@@ -95,13 +104,13 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 | Nome                                | Tipo  | Efeito                                                                                                                                                 |
 | ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `bloqueio_*` (ex.: `bloqueio_lago`) | Mesh  | Barreira invisível: a Aika não entra na área que ele cobre visto de cima.                                                                              |
+| `bloqueio_*` (ex.: `bloqueio_lago`) | Mesh  | Barreira invisível: o visitante não entra na área que ele cobre visto de cima.                                                                         |
 | `poi_templo`, `poi_correio`         | Empty | Posição do marco (sem `poi_correio`, a caixa fica ao lado do templo). Gire o Empty para escolher para onde o prédio olha; sem giro, olha para o spawn. |
 | `area_servicos`                     | Empty | Centro da Praça dos Serviços (6 prédios em ferradura, raio de 7 m, abertura para o spawn).                                                             |
 | `area_vila`                         | Empty | Centro da vila das casas dos repositórios. Propriedade personalizada `raio` (metros, padrão 12).                                                       |
 | `historia_1`, `historia_2`, …       | Empty | Posição dos NPCs da Trilha da história, na ordem dos marcos (a placa fica 1,3 m atrás).                                                                |
 
-- O **spawn** da Aika é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
+- O **spawn** do visitante é o polo norte (+Z no Blender, topo do planeta). Deixe essa área livre.
 - Para a propriedade `raio`: selecione o Empty → Object Properties → Custom Properties → Add, e
   marque **Include → Custom Properties** na exportação.
 - Os prédios, NPCs e casas são posicionados pelo código em cima do terreno. Não modele o templo,
@@ -124,7 +133,7 @@ Meta: **todos os `.glb` somados abaixo de 5 MB**.
 
 - Mesma escala e orientação da Aika (cerca de 2 m, frente em −Y, pés em Z = 0).
 - `felipe.glb`: o Felipe, roupa escura com detalhes laranja. Também é usado nos NPCs da Trilha
-  da história (o Felipe de cada época). Ele se vira para a Aika quando ela
+  da história (o Felipe de cada época). Ele se vira para o visitante quando ele
   chega perto (o código gira o modelo inteiro).
 - `npc.glb`: um atendente genérico usado nos 6 serviços. A roupa usa um material `@tint`, que
   recebe a cor de cada prédio.

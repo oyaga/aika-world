@@ -26,13 +26,23 @@ interface AppState {
   reducedMotion: boolean
   /** null até o `planeta.glb` carregar (ou para sempre, sem ele). */
   markers: Markers | null
+  /** Fala atual da Aika (balão sobre a cabeça dela). `id` muda a cada fala. */
+  aikaLine: { text: string; id: number } | null
+  /** Cor da roupa do visitante, sorteada a cada visita. */
+  visitorColor: string
   loadWorld: () => Promise<void>
   setNearPoi: (id: PoiId | null) => void
   open: (id: PoiId) => void
   close: () => void
   toggleSimpleView: () => void
   setMarkers: (markers: Markers) => void
+  aikaSay: (text: string) => void
+  aikaHush: () => void
 }
+
+let speechId = 0
+
+const VISITOR_COLORS = ['#3fb5a0', '#4f8cff', '#f2a93b', '#9b6bff', '#e9577d', '#44b86b']
 
 const prefersReducedMotion = (): boolean =>
   typeof window !== 'undefined' &&
@@ -47,6 +57,8 @@ export const useStore = create<AppState>((set, get) => ({
   simpleView: false,
   reducedMotion: prefersReducedMotion(),
   markers: null,
+  aikaLine: null,
+  visitorColor: VISITOR_COLORS[Math.floor(Math.random() * VISITOR_COLORS.length)] ?? '#3fb5a0',
   loadWorld: async () => {
     if (get().world) return
     try {
@@ -70,6 +82,8 @@ export const useStore = create<AppState>((set, get) => ({
   close: () => set({ openPoi: null }),
   toggleSimpleView: () => set((s) => ({ simpleView: !s.simpleView, openPoi: null })),
   setMarkers: (markers) => set({ markers }),
+  aikaSay: (text) => set({ aikaLine: { text, id: ++speechId } }),
+  aikaHush: () => set({ aikaLine: null }),
 }))
 
 if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {

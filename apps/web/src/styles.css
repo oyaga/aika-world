@@ -580,3 +580,47 @@ button {
 .contacts small {
   color: var(--muted);
 }
+
+/* Balão de fala da Aika */
+.speech {
+  position: relative;
+  width: max-content;
+  max-width: min(260px, 70vw);
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 2px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transform: translateY(-50%);
+  animation: speech-pop 0.2s ease-out;
+}
+
+.speech::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 14px;
+  height: 14px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--panel);
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+@keyframes speech-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-40%) scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speech {
+    animation: none;
+  }
+}
