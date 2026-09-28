@@ -53,8 +53,27 @@ export function Toon({ color, emissive, emissiveIntensity, vertexColors }: ToonP
 
 const toonCache = new Map<string, Material>()
 
-/** Multiplicador dos emissivos: acima de 1 eles passam do limiar do bloom. */
+/** Multiplicador padrão dos emissivos: acima de 1 eles passam do limiar do bloom. */
 export const GLOW = 2.6
+
+/** Materiais emissivos vindos do glTF, para o ciclo dia/noite ajustar o brilho. */
+const glowing = new Set<MeshBasicMaterial | MeshToonMaterial>()
+let glowNow = GLOW
+
+function applyGlow(m: MeshBasicMaterial | MeshToonMaterial) {
+  const base = m.userData.glowBase as Color | number | undefined
+  if (base === undefined) return
+  if ((m as MeshBasicMaterial).isMeshBasicMaterial)
+    m.color.copy(base as Color).multiplyScalar(glowNow)
+  else (m as MeshToonMaterial).emissiveIntensity = (base as number) * glowNow
+}
+
+/** Brilho atual do neon (Atmosphere chama a cada frame, conforme o dia/noite). */
+export function setGlow(k: number) {
+  if (Math.abs(k - glowNow) < 0.004) return
+  glowNow = k
+  for (const m of glowing) applyGlow(m)
+}
 
 /**
  * Converte um material vindo do glTF (MeshStandardMaterial) para o visual
@@ -88,15 +107,27 @@ export function toToon(source: Material, tint?: Tint): Material {
     side: std.side,
   }
   // Emissivos (neon, lanternas, janelas) passam de 1 para acender o bloom (Effects.tsx).
-  const result: Material = source.name.endsWith('@unlit')
-    ? new MeshBasicMaterial({ ...common, color: common.color.multiplyScalar(GLOW) })
-    : new MeshToonMaterial({
-        ...common,
-        gradientMap: toonGradient,
-        emissive: std.emissive?.clone() ?? new Color('#000000'),
-        emissiveMap: std.emissiveMap ?? null,
-        emissiveIntensity: (std.emissiveIntensity ?? 1) * GLOW,
-      })
+  let result: MeshBasicMaterial | MeshToonMaterial
+  if (source.name.endsWith('@unlit')) {
+    result = new MeshBasicMaterial({ ...common })
+    result.userData.glowBase = common.color.clone()
+    glowing.add(result)
+  } else {
+    const emissive = std.emissive?.clone() ?? new Color('#000000')
+    result = new MeshToonMaterial({
+      ...common,
+      gradientMap: toonGradient,
+      emissive,
+      emissiveMap: std.emissiveMap ?? null,
+    })
+    if (emissive.getHex() !== 0 || std.emissiveMap) {
+      result.userData.glowBase = std.emissiveIntensity ?? 1
+      glowing.add(result)
+    } else {
+      result.emissiveIntensity = std.emissiveIntensity ?? 1
+    }
+  }
+  applyGlow(result)
   toonCache.set(key, result)
   return result
 }

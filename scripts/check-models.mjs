@@ -31,7 +31,8 @@ const RULES = {
   },
   felipe: { tris: 12000, materials: 6, texture: 1024, height: [1.2, 3] },
   npc: { tris: 12000, materials: 6, texture: 1024, tint: true, height: [1.2, 3] },
-  templo: { tris: 25000, materials: 10, texture: 2048, height: [3, 8] },
+  // A base do templo acompanha a curvatura do platô (esfera de 22 m): as pontas descem até ~0,8 m.
+  templo: { tris: 25000, materials: 10, texture: 2048, height: [3, 8], baseDrop: 0.8 },
   servico: { tris: 8000, materials: 6, texture: 1024, tint: true, height: [2.5, 5.5] },
   correio: { tris: 2500, materials: 3, texture: 512, height: [0.8, 2.2] },
   casa: { tris: 4000, materials: 4, texture: 1024, tint: true, height: [2.2, 4] },
@@ -244,7 +245,7 @@ for (const file of files.sort()) {
           `altura ${height.toFixed(2)} m (esperado ${lo}–${hi} m): confira escala e Apply Transforms`,
         )
       else ok(`altura ${height.toFixed(2)} m`)
-      if (Math.abs(a.min[1]) > 0.15)
+      if (a.min[1] > 0.15 || a.min[1] < -(rule.baseDrop ?? 0.15))
         warn(`a base está em y = ${a.min[1].toFixed(2)} m: a origem deve ficar nos pés/chão`)
     }
 

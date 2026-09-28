@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react'
-import { Stars } from '@react-three/drei'
 import { modelUrl } from '../lib/models'
 import { useStore } from '../state/store'
 import { Atmosphere } from './Atmosphere'
 import { CameraRig } from './CameraRig'
+import { DayNightClock } from './dayNight'
 import { Effects } from './Effects'
 import { isTouchDevice } from '../lib/device'
 import { Companion } from './Companion'
@@ -55,8 +55,8 @@ export function Scene({ landmarks, story, services, houses, pois, onReady }: Sce
 
   return (
     <>
-      <Atmosphere />
-      <Stars radius={90} depth={30} count={1500} factor={3} fade speed={reducedMotion ? 0 : 0.5} />
+      <DayNightClock />
+      <Atmosphere reducedMotion={reducedMotion} />
 
       <Planet />
       {!hasPlanetModel && <Props avoid={avoid} />}

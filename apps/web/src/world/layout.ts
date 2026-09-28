@@ -3,7 +3,7 @@ import type { RepoHouse, WorldData } from '@aika-world/shared'
 import type { Service, StoryMilestone } from '../content'
 import type { Markers } from '../state/store'
 import { lakeNear, SHORE } from './lakes'
-import { hasTerrainModel, nearWater } from './terrain'
+import { hasTerrainModel, nearPath, nearWater } from './terrain'
 import {
   angleBetween,
   dirFromAngles,
@@ -228,7 +228,7 @@ export function layoutStory(story: StoryMilestone[], markers: Markers | null): S
  * procedural, fora do anel da trilha.
  */
 function awayFromTrail(p: Vector3): boolean {
-  if (hasTerrainModel()) return !nearWater(p, 2.5)
+  if (hasTerrainModel()) return !nearWater(p, 2.5) && !nearPath(p, 2.4)
   return (
     Math.abs(Math.acos(Math.max(-1, Math.min(1, p.y))) - TRAIL_POLAR) > 0.18 &&
     !lakeNear(p, SHORE + 2.5)
