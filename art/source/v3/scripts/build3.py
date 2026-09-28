@@ -23,3 +23,44 @@ def P3_export():
 def T3():
     _x3("_templo3.py","_templo3_tex.py")
     return export("templo",[bpy.data.objects["templo"]])
+
+# ---- builds dos personagens chibi (acrescentado ao _build3.py) ----
+def load_char_libs(u=1.0):
+    _x2("_rig3.py")
+    src=open(os.path.join(V2,"_anim3.py"),encoding='utf-8').read()
+    a="Matrix.Translation((0,0.9,0.85))"; b="            if 'loc' in v: P[n].location=v['loc']"
+    assert src.count(a)==1 and src.count(b)==1
+    src=src.replace(a,"Matrix.Translation((0,0.9*CHIBI['sb']*CHIBI['u'],0.95*CHIBI['u']))")
+    src=src.replace(b,"            if 'loc' in v: P[n].location=Vector(v['loc'])*(CHIBI['sb']*CHIBI['u'])")
+    exec(src, globals())
+    _x2("_chars.py")
+    _x3("_chibi3.py")
+    CHIBI['u']=u
+def _char_objs():
+    return [o for o in bpy.data.objects if o.type in ('MESH','ARMATURE')]
+def C3_visitante():
+    load_char_libs(1.0); _x2("_visitante.py"); smooth_skin(_char_objs()); _x2("_visitante_tex.py")
+    return export("visitante",_char_objs(),anim=True,extras=True)
+def C3_aika():
+    load_char_libs(0.51); _x2("_aika2.py"); smooth_skin(_char_objs()); _x2("_aika2_tex.py")
+    return export("aika",_char_objs(),anim=True)
+def C3_felipe():
+    load_char_libs(1.0); _x2("_felipe2.py"); smooth_skin(_char_objs()); _x2("_felipe2_tex.py")
+    return export("felipe",_char_objs(),anim=True)
+def C3_npc(slug):
+    load_char_libs(1.0); _x2("_npcs.py"); objs=npc(slug); smooth_skin(objs); _x2("_npcs_tex.py")
+    texture_all([o for o in objs if o.type=='MESH'],atlas_name="npc3_"+slug+"_atlas",size=1024,seed=sum(map(ord,slug))%97)
+    nm="npc" if slug=="generico" else "npc_"+slug
+    return export(nm,objs,anim=True)
+def char_shots(prefix, rig, tgt_z, dist, acts=(("frente","Idle",1),)):
+    sc=bpy.context.scene; showcase_setup(emit=3.0); out=[]
+    for tag,act,fr in acts:
+        if act in bpy.data.actions:
+            rig.animation_data.action=bpy.data.actions[act]
+            try:
+                if bpy.data.actions[act].slots: rig.animation_data.action_slot=bpy.data.actions[act].slots[0]
+            except Exception: pass
+            sc.frame_set(fr)
+        loc=(dist*0.35,-dist,tgt_z*1.15) if tag!="costas" else (-dist*0.3,dist,tgt_z*1.1)
+        out.append(_shot(prefix+"_"+tag,loc,(0,0,tgt_z),40,520))
+    showcase_teardown(); return out

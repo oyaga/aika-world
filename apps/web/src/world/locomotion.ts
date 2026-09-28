@@ -41,12 +41,22 @@ export interface StepResult {
   jumped: boolean
 }
 
-/** Avança a física vertical de `body` na direção `dir` (unitária). */
-export function stepVertical(body: Body, dir: Vector3, dt: number, wantJump: boolean): StepResult {
+/**
+ * Avança a física vertical de `body` na direção `dir` (unitária).
+ * `size` é a escala do personagem (1 = visitante): a profundidade em que ele
+ * passa a nadar e o quanto afunda acompanham o tamanho (a Aika é bem menor).
+ */
+export function stepVertical(
+  body: Body,
+  dir: Vector3,
+  dt: number,
+  wantJump: boolean,
+  size = 1,
+): StepResult {
   const ground = surfaceRadius(dir)
   const water = waterRadius(dir)
-  const deep = water !== null && water - ground > SWIM_DEPTH
-  const floor = deep ? (water as number) - SWIM_SINK : ground
+  const deep = water !== null && water - ground > SWIM_DEPTH * size
+  const floor = deep ? (water as number) - SWIM_SINK * size : ground
   const result: StepResult = { splash: 0, jumped: false }
 
   if (body.radius === 0) {

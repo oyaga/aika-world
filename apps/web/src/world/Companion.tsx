@@ -21,7 +21,9 @@ import { splashAt } from './Splashes'
 import { hasTerrainModel } from './terrain'
 
 /** Onde a Aika gosta de ficar, no referencial do visitante: ao lado e um pouco atrás. */
-const FOLLOW_OFFSET = new Vector3(1.4, 0, -1)
+/** Escala da Aika em relação ao visitante (mascote de ~0,9 m; ver aika.glb). */
+export const AIKA_SIZE = 0.51
+const FOLLOW_OFFSET = new Vector3(1.1, 0, -0.7)
 const TELEPORT_GAP = 25 // m: se ficar muito para trás, reaparece ao lado
 /** A Aika pula um instantinho depois do visitante. */
 const JUMP_DELAY_MS = 180
@@ -76,7 +78,7 @@ function followStep(dt: number) {
   const wantJump =
     jumpedAt > a.copiedJump && performance.now() - jumpedAt > JUMP_DELAY_MS && a.state !== 'air'
   if (wantJump) a.copiedJump = jumpedAt
-  const step = stepVertical(a, a.dir, dt, wantJump)
+  const step = stepVertical(a, a.dir, dt, wantJump, AIKA_SIZE)
   a.position.copy(a.dir).multiplyScalar(a.radius)
   if (step.splash > 0) splashAt(a.position, step.splash * 0.8)
 }
@@ -97,7 +99,7 @@ function SpeechBubble() {
 
   if (!line || hidden) return null
   return (
-    <Html position={[0, 2.55, 0]} center zIndexRange={[20, 10]} pointerEvents="none">
+    <Html position={[0, 1.45, 0]} center zIndexRange={[20, 10]} pointerEvents="none">
       <div className="speech" aria-hidden="true" key={line.id}>
         {line.text}
       </div>

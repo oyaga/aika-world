@@ -19,7 +19,8 @@ const DRACO_HINT = 1024 * 1024
 
 /** Regras por arquivo (ver docs/arte.md). height = altura esperada em metros. */
 const RULES = {
-  aika: { tris: 15000, materials: 6, texture: 2048, actions: ['Idle', 'Walk'], height: [1.2, 3] },
+  // A Aika é uma mascote (~0,9 m), menor que o visitante.
+  aika: { tris: 15000, materials: 6, texture: 2048, actions: ['Idle', 'Walk'], height: [0.6, 1.3] },
   visitante: {
     tris: 40000,
     dressedTris: 15000,
