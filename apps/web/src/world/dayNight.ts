@@ -21,16 +21,17 @@ function forcedFromUrl(): number | null {
   return null
 }
 
+// Declaração de função (içada): `dayNight` abaixo chama nightFromPhase na carga do módulo.
+function smoothstep(a: number, b: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
+  return t * t * (3 - 2 * t)
+}
+
 const FORCED = forcedFromUrl()
 
 export const dayNight = {
   /** 0 = dia, 1 = noite. */
   night: FORCED ?? nightFromPhase(START_PHASE),
-}
-
-const smoothstep = (a: number, b: number, x: number) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
-  return t * t * (3 - 2 * t)
 }
 
 /** Fase 0..1 do ciclo → fator de noite 0..1 (0 = meio-dia, 0,5 = meia-noite). */
