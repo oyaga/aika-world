@@ -21,14 +21,14 @@ const ZOOM_MIN = 0.45
 const ZOOM_MAX = 2.2
 const ELEVATION_MIN = 0.12
 const ELEVATION_MAX = 1.35
-/** Andando sem arrastar, o giro volta aos poucos para trás do visitante (1/s). */
-const YAW_RECENTER = 1.6
 
 /**
  * Controle da câmera pelo mouse: rolagem aproxima/afasta, arrastar com
  * qualquer botão gira em volta do visitante e muda a inclinação.
+ * `yaw` é o giro da câmera em relação à frente do visitante; ao andar, o
+ * Player vira o visitante para onde a câmera olha e zera esse giro.
  */
-const orbit = { zoom: 1, yaw: 0, pitch: 0, dragging: false }
+export const orbit = { zoom: 1, yaw: 0, pitch: 0, dragging: false }
 
 const desiredPos = new Vector3()
 const lookAt = new Vector3()
@@ -112,9 +112,6 @@ export function CameraRig() {
       offset.copy(FITTING_OFFSET)
       lookAt.copy(aspect < 0.8 ? FITTING_LOOK_PORTRAIT : FITTING_LOOK)
     } else {
-      if (!orbit.dragging && playerState.speed > 0.1) {
-        orbit.yaw *= Math.exp(-delta * YAW_RECENTER)
-      }
       const dist = BASE_DISTANCE * orbit.zoom
       const elev = BASE_ELEVATION + orbit.pitch
       const h = dist * Math.cos(elev)

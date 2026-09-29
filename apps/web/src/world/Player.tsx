@@ -6,6 +6,7 @@ import { consumeJump, readAxes } from '../state/input'
 import { playerState } from '../state/player'
 import { useStore } from '../state/store'
 import { sendMove } from '../net/multiplayer'
+import { orbit } from './CameraRig'
 import { type Motion, Visitor } from './Characters'
 import { EmoteBubble } from './RemotePlayers'
 import { INTERACT_DISTANCE, type Poi, poiAnchor } from './layout'
@@ -65,6 +66,14 @@ export function Player({ pois }: { pois: Poi[] }) {
     const swimming = playerState.state === 'swim'
     const maxSpeed = swimming ? SWIM_SPEED : axes.run ? RUN_SPEED : WALK_SPEED
     const q = playerState.orientation
+    // Andar segue a câmera: o visitante vira aos poucos para onde ela olha e o
+    // giro da câmera diminui na mesma medida (a vista não pula).
+    if (forward !== 0 && orbit.yaw !== 0) {
+      const yawStep = orbit.yaw * Math.min(1, delta * 10)
+      turn(q, yawStep)
+      orbit.yaw -= yawStep
+      if (Math.abs(orbit.yaw) < 1e-3) orbit.yaw = 0
+    }
     if (turnAxis !== 0) turn(q, turnAxis * TURN_SPEED * delta)
     if (forward !== 0) {
       const dist = forward * maxSpeed * delta
