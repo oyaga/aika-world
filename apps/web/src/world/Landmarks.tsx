@@ -9,6 +9,7 @@ import { Toon } from './materials'
 import { Model } from './Model'
 import { Npc } from './Npc'
 import { BRAND } from './palette'
+import { box, circle, useColliders } from './colliders'
 import { surfaceRadius } from './terrain'
 
 const ROOF = '#2f2a44'
@@ -205,6 +206,23 @@ function Landmark({ poi }: { poi: LandmarkPoi }) {
       labelPos: poi.dir.clone().multiplyScalar(ground + LABEL_HEIGHT[poi.landmark]),
     }
   }, [poi])
+  // Medidas do templo.glb (frente em +Z): base, pilares do torii, lanternas e sakuras.
+  const colliders = useMemo(
+    () =>
+      poi.landmark === 'templo'
+        ? [
+            box(position, quaternion, 0, 0, 2.8, 2.45),
+            circle(position, quaternion, -1.45, 4.8, 0.22),
+            circle(position, quaternion, 1.45, 4.8, 0.22),
+            circle(position, quaternion, -2.4, 3.45, 0.35),
+            circle(position, quaternion, 2.4, 3.45, 0.35),
+            circle(position, quaternion, 3.3, -1.3, 0.25),
+            circle(position, quaternion, -3.3, -1.9, 0.25),
+          ]
+        : [circle(position, quaternion, 0, 0, 0.4)],
+    [poi.landmark, position, quaternion],
+  )
+  useColliders(`marco:${poi.id}`, colliders)
   return (
     <>
       <group position={position} quaternion={quaternion}>

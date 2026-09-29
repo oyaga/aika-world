@@ -8,6 +8,7 @@ import { useStore } from '../state/store'
 import { Label } from './Label'
 import { Toon } from './materials'
 import { Model } from './Model'
+import { circle, useColliders } from './colliders'
 import { surfaceRadius } from './terrain'
 
 export interface NpcLook {
@@ -87,9 +88,14 @@ export function Npc({ dir, lookAt, name, look, model, poiId }: NpcProps) {
     return {
       position: dir.clone().multiplyScalar(ground),
       quaternion: faceTowards(dir, lookAt),
-      labelPos: dir.clone().multiplyScalar(ground + 2.5),
+      labelPos: dir.clone().multiplyScalar(ground + 2.15),
     }
   }, [dir, lookAt])
+  const colliders = useMemo(
+    () => [circle(position, quaternion, 0, 0, 0.32)],
+    [position, quaternion],
+  )
+  useColliders(`npc:${name}:${poiId ?? ''}`, colliders)
 
   useFrame(({ clock }, delta) => {
     const g = body.current

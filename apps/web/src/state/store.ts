@@ -46,6 +46,8 @@ interface AppState {
   emotes: Record<string, { emote: Emote; key: number }>
   /** Tela do guarda-roupa aberta (visitante parado, câmera de frente). */
   wardrobeOpen: boolean
+  /** Boas-vindas na tela (visitante parado até fechar). */
+  welcomeOpen: boolean
   /** Visual do visitante (salvo neste navegador). */
   look: Look
   /** Peças que existem no visitante.glb; null = sem guarda-roupa (sem modelo). */
@@ -65,6 +67,7 @@ interface AppState {
   setRemoteIds: (ids: string[]) => void
   showEmote: (id: string, emote: Emote) => void
   setWardrobeOpen: (open: boolean) => void
+  closeWelcome: () => void
   setWardrobe: (catalog: Record<LookSlot, string[]>) => void
   setPiece: (slot: LookSlot, piece: string) => void
   setLookColor: (slot: LookColorSlot, color: string | null) => void
@@ -117,6 +120,7 @@ export const useStore = create<AppState>((set, get) => ({
   remoteIds: [],
   emotes: {},
   wardrobeOpen: false,
+  welcomeOpen: true,
   look: loadLook(),
   wardrobe: null,
   remoteLooks: {},
@@ -149,6 +153,7 @@ export const useStore = create<AppState>((set, get) => ({
   setVisitorColor: (visitorColor) => set({ visitorColor }),
   setNet: (net) => set((s) => ({ net: { ...s.net, ...net } })),
   setRemoteIds: (remoteIds) => set({ remoteIds }),
+  closeWelcome: () => set({ welcomeOpen: false }),
   setWardrobeOpen: (wardrobeOpen) => set({ wardrobeOpen, openPoi: null }),
   setWardrobe: (wardrobe) => set({ wardrobe }),
   setPiece: (slot, piece) =>

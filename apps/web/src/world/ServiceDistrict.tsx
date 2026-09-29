@@ -8,6 +8,7 @@ import { firstModel } from '../lib/models'
 import { Model } from './Model'
 import { Npc } from './Npc'
 import { BRAND } from './palette'
+import { box, useColliders } from './colliders'
 import { surfaceRadius } from './terrain'
 
 const BUILDING_HEIGHTS = [3.2, 2.8, 3.8, 3, 3.4, 2.9]
@@ -57,6 +58,12 @@ function ServiceSpot({ poi, index }: { poi: ServicePoi; index: number }) {
       labelPos: poi.buildingDir.clone().multiplyScalar(ground + height + 1.2),
     }
   }, [poi, height])
+  // servico_*.glb: base ~3,2 × 3,2 m, com a calçada da porta em +Z.
+  const colliders = useMemo(
+    () => [box(position, quaternion, 0, 0.2, 1.6, 1.55)],
+    [position, quaternion],
+  )
+  useColliders(poi.id, colliders)
 
   return (
     <>

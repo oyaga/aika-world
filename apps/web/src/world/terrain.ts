@@ -1,5 +1,6 @@
 import { type Mesh, type Object3D, Raycaster, Vector3 } from 'three'
 import { offsetDir, PLANET_RADIUS, tangentTowards } from '../lib/sphere'
+import { hitsCollider } from './colliders'
 import { proceduralGround, proceduralWater } from './lakes'
 
 /**
@@ -72,9 +73,14 @@ export function nearPath(dir: Vector3, margin: number): boolean {
   return false
 }
 
-/** Verdadeiro se a direção cai dentro de um objeto `bloqueio_*`. */
+/**
+ * Verdadeiro se a direção cai dentro de um objeto `bloqueio_*` do planeta
+ * (árvores, pedras, postes, barranco do templo…) ou de um colisor registrado
+ * pelo código (templo, prédios, casas, NPCs; ver colliders.ts).
+ */
 export function isBlocked(dir: Vector3): boolean {
-  return blockers.length > 0 && castDown(dir, blockers) !== undefined
+  if (blockers.length > 0 && castDown(dir, blockers) !== undefined) return true
+  return hitsCollider(dir)
 }
 
 /** true quando o terreno vem do `planeta.glb` (e não do planeta procedural). */

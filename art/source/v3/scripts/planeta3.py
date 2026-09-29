@@ -27,6 +27,7 @@ CO=mat("Concreto","#7C7888"); BR=mat("Branco","#F2EEE2"); CY=mat("Ciano@unlit","
 LZ=mat("Luz@unlit","#FFD9A0",emit=True); VI=mat("Vinho","#8E2F3C"); LA=mat("Laranja","#E8742A"); ES=mat("Escuro","#1E1A24")
 # ---- layout ----
 POLE=Vector((0,0,1))
+BLOQ=[]   # (direção, raio em m) de cada obstáculo sólido
 TEMPLO=D(55,-90); TFWD=tangent(TEMPLO,POLE)                    # templo olha para o polo
 TEAST=TFWD.cross(TEMPLO).normalized()
 PLAT_R=6.0; PLAT_H=2.0; STAIR_A=6.0; STAIR_B=9.4; STAIR_W=1.3
@@ -294,7 +295,7 @@ for sx in (-1,1):
               B('transformador',(0.18*sx,0.14,3.9),(0.16,0.12,0.26),ES),
               B('placa_poste',(0,-0.12,2.2),(0.14,0.01,0.3),VI)):
         place(o,n,face=SERV,h=0.12); props.append(o)
-    poles.append(n)
+    poles.append(n); BLOQ.append((n,0.2))
 def wire(a,b,za,zb,sag=0.35,m=ES):
     A=a*(R0+height(a)+za); Bb=b*(R0+height(b)+zb); out=[]
     prev=A
@@ -308,18 +309,18 @@ for sx in (-1,1):
     for o in (prim('cyl','poste',loc=(0,0,2.6),m=CO,radius=0.11,depth=5.2,vertices=8),
               B('cruzeta',(0,0,4.7),(0.9,0.05,0.05),MA)):
         place(o,n,face=SERV,h=max(height(n),0)); props.append(o)
-    poles2.append(n)
+    poles2.append(n); BLOQ.append((n,0.2))
 for zz in (4.72,4.45):
     props+=wire(poles[0],poles[1],zz,zz)
     props+=wire(poles[0],poles2[0],zz,zz,sag=0.45); props+=wire(poles[1],poles2[1],zz,zz,sag=0.45)
 # placa triangular com glifo
-n=heading_pt(40,4.35)
+n=heading_pt(40,4.35); BLOQ.append((n,0.12))
 for o in (prim('cyl','haste',loc=(0,0,1.1),m=CO,radius=0.035,depth=2.2,vertices=6),
           prim('cone','triangulo',loc=(0,0,2.2),rot=(math.pi/2,0,0),scale=(1,1,0.1),m=VI,radius1=0.42,radius2=0.0,depth=0.06,vertices=3),
           B('glifo_placa',(0,-0.035,2.17),(0.04,0.005,0.13),BR), B('glifo_placa2',(0,-0.035,2.12),(0.12,0.005,0.03),BR)):
     place(o,n,face=SERV+PF*0,h=0.12); props.append(o)
 # máquina de venda
-n=heading_pt(-32,5.3)
+n=heading_pt(-32,5.3); BLOQ.append((n,0.55))
 for o in (B('maquina',(0,0,0.95),(0.45,0.36,0.95),CO,bev=0.03), B('maquina_tela',(0,-0.365,1.25),(0.36,0.01,0.45),LZ),
           B('maquina_faixa',(0,-0.365,0.62),(0.38,0.012,0.08),VI), B('maquina_saida',(0,-0.365,0.25),(0.3,0.015,0.1),ES)):
     place(o,n,face=SERV,h=0.12); props.append(o)
@@ -333,12 +334,12 @@ for (x,y) in ((-0.3,-0.2),(-1.9,-1.5),(-0.6,-1.9)):
         place(o,n,h=0.0); props.append(o)
 # vasos nos vãos entre os prédios
 for deg in (84,132,180,228,276):
-    n=heading_pt(deg,6.4)
+    n=heading_pt(deg,6.4); BLOQ.append((n,0.35))
     for o in (prim('cone','vaso',loc=(0,0,0.25),m=MA,radius1=0.22,radius2=0.3,depth=0.5,vertices=10),
               prim('ico','planta',loc=(0,0,0.75),scale=(1,1,0.9),m=FO,radius=0.42,subdivisions=1)):
         place(o,n,h=0.12); props.append(o)
 # banco
-n=heading_pt(-47,4.5)
+n=heading_pt(-47,4.5); BLOQ.append((n,0.6))
 for o in (B('banco',(0,0,0.45),(0.7,0.2,0.04),MA), B('banco_pe',(-0.55,0,0.22),(0.05,0.18,0.22),CO), B('banco_pe',(0.55,0,0.22),(0.05,0.18,0.22),CO)):
     place(o,n,face=SERV,h=0.12); props.append(o)
 join(props,"praca_props")
@@ -393,6 +394,7 @@ for i,n in enumerate(spots):
         for (dx,dy,dz,r) in ((0,0,1.8,0.68),(0.45,0.2,1.6,0.48),(-0.42,-0.1,1.65,0.46),(0.05,0.3,2.2,0.42)):
             ps.append(prim('ico','sk_copa',loc=(dx*s,dy*s,dz*s),m=SK,radius=r*s,subdivisions=1))
         for o in ps: place(o,n,face=f,sink=0.05); saks.append(o)
+        BLOQ.append((n,0.3*s))
     elif i%4==1:   # rochedo esculpido com rachadura neon
         s=random.uniform(0.7,1.6)
         r=prim('ico','pedra',loc=(0,0,0.32*s),scale=(s,s*0.85,s*0.8),m=PE,radius=0.9,subdivisions=2)
@@ -405,6 +407,7 @@ for i,n in enumerate(spots):
             parts.append(bar('rachadura',(x,-0.86*s,z),(x2,-0.86*s,z2),0.022,CY))
             x,z=x2,z2
         for o in parts: place(o,n,sink=0.25,face=f); rocks.append(o)
+        BLOQ.append((n,0.85*s))
     else:   # pinheiro facetado de 4 camadas com traços neon
         s=random.uniform(0.85,1.45)
         ps=[prim('cyl','tronco',loc=(0,0,0.4*s),m=MA,radius=0.16*s,depth=0.8*s,vertices=6)]
@@ -418,6 +421,7 @@ for i,n in enumerate(spots):
                 a=random.uniform(0,2*math.pi)
                 ps.append(B('traco',(math.cos(a)*r*0.9*s,math.sin(a)*r*0.9*s,(z-dh/2+0.07)*s),(0.2*r*s,0.022,0.018),CY,rot=(0,0,a+math.pi/2)))
         for o in ps: place(o,n,face=f,sink=0.05); trees.append(o)
+        BLOQ.append((n,0.42*s))
 # sakuras extras no platô do templo (nas bordas de trás)
 for sx in (-1,1):
     n=local(TEMPLO,POLE,sx*5.2,-3.5)
@@ -425,6 +429,7 @@ for sx in (-1,1):
     for (dx,dy,dz,r) in ((0,0,1.85,0.7),(0.45,0.2,1.65,0.5),(-0.42,-0.1,1.7,0.48)):
         ps.append(prim('ico','sk_copa',loc=(dx,dy,dz),m=SK,radius=r,subdivisions=1))
     for o in ps: place(o,n,face=POLE,sink=0.05,h=PLAT_H); saks.append(o)
+    BLOQ.append((n,0.3))
 bsp=[]; tries=0
 while len(bsp)<150 and tries<20000:
     tries+=1; n=rnd() if len(bsp)<50 else offset(TEMPLO,rnd().cross(TEMPLO).normalized(),random.uniform(PLAT_R+2.4,PLAT_R+6))
@@ -461,6 +466,7 @@ def toro(n,face,h=None,s=1.0):
     out.append(B('toro_beiral',(0,-0.33*s,1.3*s),(0.33*s,0.008,0.012),NE,rot=(0,0,0)))
     out.append(prim('uv','toro_joia',loc=(0,0,1.64*s),m=PE,radius=0.06*s,segments=8,ring_count=5))
     for o in out: place(o,n,face=face,h=h)
+    BLOQ.append((n,0.34*s))
     return out
 lant=[]
 for sx in (-1,1):   # pé da escadaria e caminho até o spawn
@@ -552,4 +558,25 @@ for k in range(30):
         c=B('veio_fl',(0,0,0),(0.03,0.03,0.45*s),CY); bpy.context.view_layer.update()
         c.matrix_world=r.matrix_world@Matrix.Translation((0,-0.82,0))@Matrix.Diagonal((1/s,1/(s*0.85),1/(s*1.2),1))@Matrix.Diagonal((0.03,0.03,0.45*s,1)); fl.append(c)
 join(fl,"rochas_flutuantes")
+bq=[]
+for n_,r_ in BLOQ:
+    c_=prim('cyl','bq',loc=(0,0,1.2),m=PE,radius=r_,depth=3.0,vertices=8); place(c_,n_,face=POLE,h=max(height(n_),0)-0.8); bq.append(c_)
+j1=join(bq,"bloqueio_decor")
+# barranco do templo: parede em volta do platô, aberta só na escadaria
+wall=[]
+NW=72; RW=PLAT_R+0.75
+for k in range(NW):
+    ang=2*math.pi*(k+0.5)/NW; t=(TFWD*math.cos(ang)+TEAST*math.sin(ang))
+    n_=offset(TEMPLO,t,RW)
+    if in_corridor(n_,0.2): continue
+    w_=B('parede',(0,0,1.0),(math.pi*RW/NW+0.06,0.8,1.8),PE); place(w_,n_,face=n_-t,h=0.0); wall.append(w_)
+# muretas da escadaria (não dá para sair pelos lados da escada)
+al=STAIR_A-0.4
+while al<STAIR_B+0.2:
+    for sx in (-1,1):
+        n_=offset(offset(TEMPLO,TFWD,al),TEAST,sx*(STAIR_W+0.32))
+        c_=prim('cyl','mureta_bq',loc=(0,0,1.2),m=PE,radius=0.25,depth=3.0,vertices=6); place(c_,n_,face=POLE,h=max(height(n_),0)-0.8); wall.append(c_)
+    al+=0.4
+j2=join(wall,"bloqueio_barranco")
+for o_ in (j1,j2): o_.display_type='WIRE'; o_.hide_render=True
 PLANET_OBJS=[o.name for o in objs]

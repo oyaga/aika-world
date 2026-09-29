@@ -1015,3 +1015,67 @@ button {
     display: none;
   }
 }
+
+/* Boas-vindas */
+.welcome-backdrop {
+  z-index: 30;
+}
+.welcome {
+  width: min(460px, 100%);
+}
+.welcome__keys {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.welcome__keys li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.welcome kbd {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  margin-right: 2px;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.welcome__key {
+  display: inline-block;
+  min-width: 5.5em;
+  padding: 0.1em 0.5em;
+  border-radius: 999px;
+  background: rgba(255, 90, 2, 0.12);
+  color: #c94500;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+.welcome__tip {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.welcome__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 20px 18px;
+}
+.welcome__start {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 22px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.welcome__start:hover,
+.welcome__start:focus-visible {
+  filter: brightness(1.08);
+  outline: 3px solid rgba(255, 90, 2, 0.35);
+  outline-offset: 2px;
+}

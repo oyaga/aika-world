@@ -280,4 +280,60 @@ for zz in (4.72,4.45):
     props+=wire(poles[0],poles[1],zz,zz)
     props+=wire(poles[0],poles2[0],zz,zz,sag=0.45); props+=wire(poles[1],poles2[1],zz,zz,sag=0.45)""")
 
+# ================= física: bloqueios invisíveis (V3.2) =================
+rep("POLE=Vector((0,0,1))\n", "POLE=Vector((0,0,1))\nBLOQ=[]   # (direção, raio em m) de cada obstáculo sólido\n")
+# pinheiros e rochedos (código inserido pelo V3)
+rep("        for o in parts: place(o,n,sink=0.25,face=f); rocks.append(o)\n",
+    "        for o in parts: place(o,n,sink=0.25,face=f); rocks.append(o)\n        BLOQ.append((n,0.85*s))\n")
+rep("        for o in ps: place(o,n,face=f,sink=0.05); trees.append(o)\n",
+    "        for o in ps: place(o,n,face=f,sink=0.05); trees.append(o)\n        BLOQ.append((n,0.42*s))\n")
+# sakuras (v2): espalhadas e no platô
+rep("        for o in ps: place(o,n,face=f,sink=0.05); saks.append(o)\n",
+    "        for o in ps: place(o,n,face=f,sink=0.05); saks.append(o)\n        BLOQ.append((n,0.3*s))\n")
+rep("    for o in ps: place(o,n,face=POLE,sink=0.05,h=PLAT_H); saks.append(o)\n",
+    "    for o in ps: place(o,n,face=POLE,sink=0.05,h=PLAT_H); saks.append(o)\n    BLOQ.append((n,0.3))\n")
+# lanternas
+rep("    for o in out: place(o,n,face=face,h=h)\n    return out\n",
+    "    for o in out: place(o,n,face=face,h=h)\n    BLOQ.append((n,0.34*s))\n    return out\n")
+# praça: postes, máquina, banco, vasos, placa
+rep("    poles.append(n)\n", "    poles.append(n); BLOQ.append((n,0.2))\n")
+rep("    poles2.append(n)\n", "    poles2.append(n); BLOQ.append((n,0.2))\n")
+rep("""n=heading_pt(-32,5.3)
+""", """n=heading_pt(-32,5.3); BLOQ.append((n,0.55))
+""")
+rep("""n=heading_pt(-47,4.5)
+""", """n=heading_pt(-47,4.5); BLOQ.append((n,0.6))
+""")
+rep("""for deg in (84,132,180,228,276):
+    n=heading_pt(deg,6.4)
+""", """for deg in (84,132,180,228,276):
+    n=heading_pt(deg,6.4); BLOQ.append((n,0.35))
+""")
+rep("""n=heading_pt(40,4.35)
+""", """n=heading_pt(40,4.35); BLOQ.append((n,0.12))
+""")
+# monta os meshes de bloqueio no fim (antes da lista de objetos)
+rep("PLANET_OBJS=[o.name for o in objs]", """bq=[]
+for n_,r_ in BLOQ:
+    c_=prim('cyl','bq',loc=(0,0,1.2),m=PE,radius=r_,depth=3.0,vertices=8); place(c_,n_,face=POLE,h=max(height(n_),0)-0.8); bq.append(c_)
+j1=join(bq,"bloqueio_decor")
+# barranco do templo: parede em volta do platô, aberta só na escadaria
+wall=[]
+NW=72; RW=PLAT_R+0.75
+for k in range(NW):
+    ang=2*math.pi*(k+0.5)/NW; t=(TFWD*math.cos(ang)+TEAST*math.sin(ang))
+    n_=offset(TEMPLO,t,RW)
+    if in_corridor(n_,0.2): continue
+    w_=B('parede',(0,0,1.0),(math.pi*RW/NW+0.06,0.8,1.8),PE); place(w_,n_,face=n_-t,h=0.0); wall.append(w_)
+# muretas da escadaria (não dá para sair pelos lados da escada)
+al=STAIR_A-0.4
+while al<STAIR_B+0.2:
+    for sx in (-1,1):
+        n_=offset(offset(TEMPLO,TFWD,al),TEAST,sx*(STAIR_W+0.32))
+        c_=prim('cyl','mureta_bq',loc=(0,0,1.2),m=PE,radius=0.25,depth=3.0,vertices=6); place(c_,n_,face=POLE,h=max(height(n_),0)-0.8); wall.append(c_)
+    al+=0.4
+j2=join(wall,"bloqueio_barranco")
+for o_ in (j1,j2): o_.display_type='WIRE'; o_.hide_render=True
+PLANET_OBJS=[o.name for o in objs]""")
+
 open(os.path.join(H, "v3", "_planeta3.py"), "w", encoding="utf-8").write(src)

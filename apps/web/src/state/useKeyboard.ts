@@ -25,6 +25,13 @@ export function useKeyboard() {
     const onDown = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return
       const store = useStore.getState()
+      if (store.welcomeOpen) {
+        if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') {
+          e.preventDefault()
+          store.closeWelcome()
+        }
+        return
+      }
       if (e.code === 'Escape') {
         if (store.wardrobeOpen) store.setWardrobeOpen(false)
         else if (store.openPoi) store.close()

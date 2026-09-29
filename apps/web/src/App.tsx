@@ -9,6 +9,7 @@ import { Joystick } from './ui/Joystick'
 import { Loading } from './ui/Loading'
 import { Panel } from './ui/Panel'
 import { SimpleView } from './ui/SimpleView'
+import { Welcome } from './ui/Welcome'
 import { TouchControls } from './ui/TouchControls'
 import { WardrobeButton, WardrobePanel } from './ui/WardrobePanel'
 import { SERVICES, STORY } from './content'
@@ -21,6 +22,27 @@ import {
   type Poi,
 } from './world/layout'
 import { Scene } from './world/Scene'
+import { input } from './state/input'
+import { playerState } from './state/player'
+
+// Diagnóstico: com ?debug na URL, `window.aikaDebug()` mostra entrada, travas e posição.
+if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug')) {
+  ;(window as unknown as { aikaDebug: () => unknown }).aikaDebug = () => {
+    const s = useStore.getState()
+    return {
+      input: { ...input },
+      locks: {
+        openPoi: s.openPoi,
+        simpleView: s.simpleView,
+        wardrobeOpen: s.wardrobeOpen,
+        welcomeOpen: s.welcomeOpen,
+      },
+      radius: playerState.radius,
+      state: playerState.state,
+      pos: playerState.position.toArray().map((v) => Number(v.toFixed(2))),
+    }
+  }
+}
 
 export function App() {
   const world = useStore((s) => s.world)
@@ -86,7 +108,7 @@ export function App() {
               <kbd>A</kbd>
               <kbd>S</kbd>
               <kbd>D</kbd> andar · <kbd>Shift</kbd> correr · <kbd>Espaço</kbd> pular · <kbd>E</kbd>{' '}
-              interagir · <kbd>1</kbd>–<kbd>4</kbd> emotes
+              interagir · <kbd>1</kbd>–<kbd>4</kbd> emotes · mouse: girar e zoom
             </p>
           </header>
           <p className="sr-only" aria-live="polite">
@@ -116,6 +138,7 @@ export function App() {
       </div>
 
       <Loading ready={sceneReady || simpleView} />
+      {!simpleView && <Welcome ready={sceneReady} />}
     </>
   )
 }

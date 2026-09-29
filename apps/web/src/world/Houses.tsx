@@ -4,6 +4,7 @@ import { Label } from './Label'
 import { houseHeight, languageColor, type HousePoi } from './layout'
 import { Toon } from './materials'
 import { Model } from './Model'
+import { box, useColliders } from './colliders'
 import { surfaceRadius } from './terrain'
 
 /** Altura em que `casa.glb` deve ser modelada; o código estica na vertical. */
@@ -54,6 +55,12 @@ function House({ poi }: { poi: HousePoi }) {
       labelPos: poi.dir.clone().multiplyScalar(ground + height + 2),
     }
   }, [poi, height])
+  // casa.glb: base 2,5 × 2,85 m (varanda na frente, +Z).
+  const colliders = useMemo(
+    () => [box(position, quaternion, 0, 0.27, 1.25, 1.43)],
+    [position, quaternion],
+  )
+  useColliders(poi.id, colliders)
   const look: HouseLook = { height, body, roof, secret: house.secret }
   return (
     <>

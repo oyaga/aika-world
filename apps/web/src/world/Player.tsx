@@ -16,6 +16,10 @@ import { isBlocked } from './terrain'
 const TURN_SPEED = 2.4 // rad/s
 
 const before = new Quaternion()
+const tryQ = new Quaternion()
+const probeUp = new Vector3()
+/** Desvios (rad) testados quando o passo reto bate em algo: o visitante desliza rente ao obstáculo. */
+const SLIDE_ANGLES = [0.55, -0.55, 1.1, -1.1, Math.PI / 2, -Math.PI / 2]
 
 /** O que a animação vê: com o guarda-roupa aberto na água, o visitante fica em pé. */
 const display: Motion = {
@@ -52,8 +56,8 @@ export function Player({ pois }: { pois: Poi[] }) {
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1)
-    const { openPoi, simpleView, wardrobeOpen, setNearPoi } = useStore.getState()
-    const locked = openPoi !== null || simpleView || wardrobeOpen
+    const { openPoi, simpleView, wardrobeOpen, welcomeOpen, setNearPoi } = useStore.getState()
+    const locked = openPoi !== null || simpleView || wardrobeOpen || welcomeOpen
     const axes = locked ? { forward: 0, turn: 0, run: false } : readAxes()
     const { forward, turn: turnAxis } = axes
     const wantJump = consumeJump() && !locked
@@ -63,9 +67,25 @@ export function Player({ pois }: { pois: Poi[] }) {
     const q = playerState.orientation
     if (turnAxis !== 0) turn(q, turnAxis * TURN_SPEED * delta)
     if (forward !== 0) {
+      const dist = forward * maxSpeed * delta
       before.copy(q)
-      walk(q, forward * maxSpeed * delta, PLANET_RADIUS)
-      if (isBlocked(upDir.copy(UP).applyQuaternion(q))) q.copy(before)
+      // Já dentro de um obstáculo (ex.: nasceu nele): deixa sair livremente.
+      const stuck = isBlocked(probeUp.copy(UP).applyQuaternion(before))
+      walk(q, dist, PLANET_RADIUS)
+      if (!stuck && isBlocked(upDir.copy(UP).applyQuaternion(q))) {
+        q.copy(before)
+        for (const a of SLIDE_ANGLES) {
+          tryQ.copy(before)
+          turn(tryQ, a)
+          // De frente para um obstáculo redondo, o passo de lado precisa de distância própria.
+          walk(tryQ, dist * Math.max(Math.cos(a), 0.45), PLANET_RADIUS)
+          turn(tryQ, -a)
+          if (!isBlocked(upDir.copy(UP).applyQuaternion(tryQ))) {
+            q.copy(tryQ)
+            break
+          }
+        }
+      }
     }
     upDir.copy(UP).applyQuaternion(q)
     const step = stepVertical(playerState, upDir, delta, wantJump)
