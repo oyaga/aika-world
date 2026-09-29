@@ -24,9 +24,17 @@ import {
 import { Scene } from './world/Scene'
 import { input } from './state/input'
 import { playerState } from './state/player'
+import { Vector3 } from 'three'
+import { isBlocked } from './world/terrain'
 
 // Diagnóstico: com ?debug na URL, `window.aikaDebug()` mostra entrada, travas e posição.
 if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug')) {
+  // Sonda: a direção (x, y, z) do centro do planeta está bloqueada?
+  ;(window as unknown as { aikaProbe: (x: number, y: number, z: number) => boolean }).aikaProbe = (
+    x,
+    y,
+    z,
+  ) => isBlocked(new Vector3(x, y, z).normalize())
   ;(window as unknown as { aikaDebug: () => unknown }).aikaDebug = () => {
     const s = useStore.getState()
     return {

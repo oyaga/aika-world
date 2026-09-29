@@ -34,7 +34,8 @@ def chibify_pieces():
         b=_base(o.name)
         if b in EYE_NAMES:
             o.scale=o.scale*1.25; o.location.x*=1.06
-            if b=='sobrancelha': o.scale.z*=0.5; o.location.z+=0.012
+            if b=='sobrancelha':   # mais fina e com a ponta de dentro levantada (expressão simpática)
+                o.scale.z*=0.5; o.location.z+=0.012; o.rotation_euler.y*=-0.5
             if b=='cilio': o.scale.z*=0.55
         elif b=='nariz' and o.location.z>1.5:      # nariz humano pequeno (o focinho da Aika é outro)
             o.scale=o.scale*0.5; o.location.y+=0.012
